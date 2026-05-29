@@ -1,0 +1,204 @@
+
+import React, { useState } from 'react';
+import { usePersistentState } from './hooks/usePersistentState';
+import { initialClients, initialCases, initialEvents, initialTasks, initialInvoices, initialAvocats, initialPersonnels, initialFournisseurs } from './data/mockData';
+
+import Sidebar from './components/Sidebar';
+import Header from './components/Header';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import ClientsPage from './pages/ClientsPage';
+import CasesPage from './pages/CasesPage';
+import EventsPage from './pages/EventsPage';
+import AgendaPage from './pages/AgendaPage';
+import ChatPage from './pages/ChatPage';
+import BillingPage from './pages/BillingPage';
+import AvocatsPage from './pages/AvocatsPage';
+import PersonnelsPage from './pages/PersonnelsPage';
+import FournisseursPage from './pages/FournisseursPage';
+import GestionPage from './pages/GestionPage';
+import AllInterfacesPage from './pages/AllInterfacesPage';
+import AIAssistantPage from './pages/AIAssistantPage';
+import { Client, Case, Event, Task, Invoice, Avocat, Personnel, Fournisseur } from './types';
+
+declare const jspdf: any;
+
+function App() {
+    const [isAuthenticated, setIsAuthenticated] = usePersistentState('kbb_auth', false);
+    const [currentPage, setCurrentPage] = useState('Dashboard');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [clients, setClients] = usePersistentState<Client[]>('kbb_clients', initialClients);
+    const [cases, setCases] = usePersistentState<Case[]>('kbb_cases', initialCases);
+    const [events, setEvents] = usePersistentState<Event[]>('kbb_events', initialEvents);
+    const [tasks, setTasks] = usePersistentState<Task[]>('kbb_tasks', initialTasks);
+    const [invoices, setInvoices] = usePersistentState<Invoice[]>('kbb_invoices', initialInvoices);
+    const [avocats, setAvocats] = usePersistentState<Avocat[]>('kbb_avocats', initialAvocats);
+    const [personnels, setPersonnels] = usePersistentState<Personnel[]>('kbb_personnels', initialPersonnels);
+    const [fournisseurs, setFournisseurs] = usePersistentState<Fournisseur[]>('kbb_fournisseurs', initialFournisseurs);
+
+    const lawyerNames = avocats.map((a) => a.fullName);
+
+    const handleLoginSuccess = () => {
+        setIsAuthenticated(true);
+    };
+
+    const handleLogout = () => {
+        setIsAuthenticated(false);
+        setCurrentPage('Dashboard');
+    };
+    
+    // --- PDF Export Logic ---
+    const handleExportPDF = (title: string, headers: string[], data: any[][]) => {
+        const { jsPDF } = jspdf;
+        const doc = new jsPDF();
+
+        doc.setFontSize(18);
+        doc.text(`${title} - KBB App`, 14, 22);
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+        doc.text(`Généré le: ${new Date().toLocaleDateString('fr-FR')}`, 14, 30);
+
+        (doc as any).autoTable({
+            head: [headers],
+            body: data,
+            startY: 35,
+            theme: 'striped',
+            headStyles: { fillColor: [21, 68, 124] },
+        });
+
+        const safeTitle = title.toLowerCase().replace(/\s+/g, '-');
+        doc.save(`liste-${safeTitle}-kbb-app.pdf`);
+    };
+
+    const handleExportClients = () => {
+        const headers = ["Nom du Client", "Contact Principal", "Dossiers Actifs"];
+        const data = clients.map((c) => [c.name, c.contact, c.cases]);
+        handleExportPDF("Clients", headers, data);
+    };
+
+    const handleExportCases = () => {
+        const headers = ["Référence", "Nom du Dossier", "Client", "Statut"];
+        const data = cases.map((c) => [c.id, c.name, c.client, c.status]);
+        handleExportPDF("Dossiers", headers, data);
+    };
+
+    // --- Data Handlers ---
+    const handleAddClient = (newClient: Omit<Client, 'id'>) => {
+        setClients(prev => [...prev, { ...newClient, id: (prev.length > 0 ? Math.max(...prev.map(c => c.id)) : 0) + 1 }]);
+    };
+    const handleAddCase = (newCase: Case, tasksToAdd?: Omit<Task, 'id'>[]) => {
+        setCases(prev => [...prev, newCase]);
+        if (tasksToAdd && tasksToAdd.length > 0) {
+            setTasks(prev => {
+                let currentMaxId = prev.length > 0 ? Math.max(...prev.map(t => t.id)) : 0;
+                const newTasksWithIds = tasksToAdd.map(t => ({
+                    ...t,
+                    id: ++currentMaxId
+                }));
+                return [...prev, ...newTasksWithIds];
+            });
+        }
+    };
+    const handleAddEvent = (newEvent: Event) => setEvents(prev => [...prev, newEvent]);
+    const handleUpdateEvent = (updatedEvent: Event) => {
+        setEvents(prev => prev.map(e => e.id === updatedEvent.id ? updatedEvent : e));
+    };
+    const handleAddTask = (newTask: Omit<Task, 'id'>) => {
+        setTasks(prev => [...prev, { ...newTask, id: (prev.length > 0 ? Math.max(...prev.map(t => t.id)) : 0) + 1 }]);
+    };
+    const handleUpdateTaskStatus = (id: number, status: 'Effectué' | 'Non effectué' | 'Effectué à moitié') => {
+        setTasks(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+    };
+    const handleAddInvoice = (newInvoice: Invoice) => setInvoices(prev => [...prev, newInvoice]);
+    const handleAddAvocat = (newAvocat: Avocat) => setAvocats(prev => [...prev, newAvocat]);
+    const handleAddPersonnel = (newPersonnel: Personnel) => setPersonnels(prev => [...prev, newPersonnel]);
+    const handleAddFournisseur = (newFournisseur: Fournisseur) => setFournisseurs(prev => [...prev, newFournisseur]);
+
+    const handleDeleteClient = (id: number) => setClients(clients.filter(c => c.id !== id));
+    const handleDeleteCase = (id: string) => setCases(cases.filter(c => c.id !== id));
+    const handleDeleteAvocat = (id: string) => setAvocats(avocats.filter(a => a.id !== id));
+    const handleDeletePersonnel = (id: string) => setPersonnels(personnels.filter(p => p.id !== id));
+    const handleDeleteFournisseur = (id: string) => setFournisseurs(fournisseurs.filter(f => f.id !== id));
+    const handleDeleteEvent = (id: string) => setEvents(events.filter(e => e.id !== id));
+    const handleDeleteTask = (id: number) => setTasks(tasks.filter(t => t.id !== id));
+    const handleDeleteInvoice = (id: string) => setInvoices(invoices.filter(i => i.id !== id));
+
+    const handleUpdateClient = (updated: Client) => setClients(prev => prev.map(c => c.id === updated.id ? updated : c));
+    const handleUpdateCase = (updated: Case) => setCases(prev => prev.map(c => c.id === updated.id ? updated : c));
+    const handleUpdateAvocat = (updated: Avocat) => setAvocats(prev => prev.map(a => a.id === updated.id ? updated : a));
+    const handleUpdatePersonnel = (updated: Personnel) => setPersonnels(prev => prev.map(p => p.id === updated.id ? updated : p));
+
+    const filteredClients = clients.filter(c => 
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        c.contact.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const filteredCases = cases.filter(c => 
+        c.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        c.client.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const filteredEvents = events.filter(e => 
+        e.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        e.type.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        e.lieu.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const renderPage = () => {
+        const pageProps = {
+            clients: filteredClients, 
+            cases: filteredCases, 
+            events: filteredEvents, 
+            tasks, invoices, avocats, lawyerNames, personnels, fournisseurs,
+            onAddClient: handleAddClient, onAddCase: handleAddCase, onAddEvent: handleAddEvent,
+            onAddTask: handleAddTask, onAddInvoice: handleAddInvoice, onAddAvocat: handleAddAvocat, onAddPersonnel: handleAddPersonnel, onAddFournisseur: handleAddFournisseur,
+            onDeleteClient: handleDeleteClient, onDeleteCase: handleDeleteCase, onDeleteAvocat: handleDeleteAvocat, onDeletePersonnel: handleDeletePersonnel, onDeleteFournisseur: handleDeleteFournisseur,
+            onDeleteEvent: handleDeleteEvent, onDeleteTask: handleDeleteTask, onDeleteInvoice: handleDeleteInvoice,
+            onExportClients: handleExportClients, onExportCases: handleExportCases,
+            onUpdateClient: handleUpdateClient, onUpdateCase: handleUpdateCase, onUpdateAvocat: handleUpdateAvocat, onUpdatePersonnel: handleUpdatePersonnel,
+        };
+
+        switch (currentPage) {
+            case 'Dashboard': return <DashboardPage clients={filteredClients} cases={filteredCases} events={filteredEvents} tasks={tasks} invoices={invoices} avocats={avocats} onUpdateTaskStatus={handleUpdateTaskStatus} onAddTask={handleAddTask} />;
+            case 'AIAssistant': return <AIAssistantPage clients={filteredClients} cases={filteredCases} tasks={tasks} invoices={invoices} />;
+            case 'Clients': return <ClientsPage clients={filteredClients} cases={cases} onAddClient={handleAddClient} onExport={handleExportClients} />;
+            case 'Dossiers': return <CasesPage cases={filteredCases} clients={filteredClients} tasks={tasks} onAddCase={handleAddCase} onExport={handleExportCases} avocats={avocats} />;
+            case 'Evenements': return <EventsPage events={filteredEvents} onAddEvent={handleAddEvent} onUpdateEvent={handleUpdateEvent} avocats={avocats} />;
+            case 'Agenda': return <AgendaPage tasks={tasks} cases={filteredCases} lawyers={lawyerNames} avocats={avocats} onAddTask={handleAddTask} />;
+            case 'Chat': return <ChatPage />;
+            case 'Facturation': return <BillingPage invoices={invoices} cases={filteredCases} onAddInvoice={handleAddInvoice} />;
+            case 'Avocats': return <AvocatsPage avocats={avocats} tasks={tasks} onAddAvocat={handleAddAvocat} />;
+            case 'Personnels': return <PersonnelsPage personnels={personnels} onAddPersonnel={handleAddPersonnel} onDeletePersonnel={handleDeletePersonnel} />;
+            case 'Fournisseurs': return <FournisseursPage fournisseurs={fournisseurs} onAddFournisseur={handleAddFournisseur} onDeleteFournisseur={handleDeleteFournisseur} />;
+            case 'Gestion': return <GestionPage {...pageProps} />;
+            case 'All': return <AllInterfacesPage {...pageProps} />;
+            default: return <DashboardPage clients={filteredClients} cases={filteredCases} events={filteredEvents} tasks={tasks} invoices={invoices} avocats={avocats} onUpdateTaskStatus={handleUpdateTaskStatus} onAddTask={handleAddTask} />;
+        }
+    };
+
+    if (!isAuthenticated) {
+        return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+    }
+
+    return (
+        <div className="flex h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden">
+            <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                <Header 
+                    searchQuery={searchQuery} 
+                    setSearchQuery={setSearchQuery} 
+                    clients={clients} 
+                    cases={cases} 
+                    events={events} 
+                    setCurrentPage={setCurrentPage} 
+                />
+                <main className="flex-1 overflow-x-hidden overflow-y-auto p-8 custom-scrollbar">
+                    {renderPage()}
+                </main>
+            </div>
+        </div>
+    );
+}
+
+export default App;
