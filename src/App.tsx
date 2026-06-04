@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { usePersistentState } from './hooks/usePersistentState';
+import { useSupabaseSync } from './hooks/useSupabaseSync';
 import { initialClients, initialCases, initialEvents, initialTasks, initialInvoices, initialAvocats, initialPersonnels, initialFournisseurs } from './data/mockData';
 
 import Sidebar from './components/Sidebar';
@@ -27,14 +28,16 @@ function App() {
     const [isAuthenticated, setIsAuthenticated] = usePersistentState('kbb_auth', false);
     const [currentPage, setCurrentPage] = useState('Dashboard');
     const [searchQuery, setSearchQuery] = useState('');
-    const [clients, setClients] = usePersistentState<Client[]>('kbb_clients', initialClients);
-    const [cases, setCases] = usePersistentState<Case[]>('kbb_cases', initialCases);
-    const [events, setEvents] = usePersistentState<Event[]>('kbb_events', initialEvents);
-    const [tasks, setTasks] = usePersistentState<Task[]>('kbb_tasks', initialTasks);
-    const [invoices, setInvoices] = usePersistentState<Invoice[]>('kbb_invoices', initialInvoices);
-    const [avocats, setAvocats] = usePersistentState<Avocat[]>('kbb_avocats', initialAvocats);
-    const [personnels, setPersonnels] = usePersistentState<Personnel[]>('kbb_personnels', initialPersonnels);
-    const [fournisseurs, setFournisseurs] = usePersistentState<Fournisseur[]>('kbb_fournisseurs', initialFournisseurs);
+    
+    // Utiliser useSupabaseSync pour synchroniser les données avec Supabase
+    const [clients, setClients] = useSupabaseSync<Client>('clients', 'kbb_clients', initialClients);
+    const [cases, setCases] = useSupabaseSync<Case>('cases', 'kbb_cases', initialCases);
+    const [events, setEvents] = useSupabaseSync<Event>('events', 'kbb_events', initialEvents);
+    const [tasks, setTasks] = useSupabaseSync<Task>('tasks', 'kbb_tasks', initialTasks);
+    const [invoices, setInvoices] = useSupabaseSync<Invoice>('invoices', 'kbb_invoices', initialInvoices);
+    const [avocats, setAvocats] = useSupabaseSync<Avocat>('avocats', 'kbb_avocats', initialAvocats);
+    const [personnels, setPersonnels] = useSupabaseSync<Personnel>('personnels', 'kbb_personnels', initialPersonnels);
+    const [fournisseurs, setFournisseurs] = useSupabaseSync<Fournisseur>('fournisseurs', 'kbb_fournisseurs', initialFournisseurs);
 
     const lawyerNames = avocats.map((a) => a.fullName);
 
