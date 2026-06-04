@@ -307,6 +307,23 @@ const PersonnelsPage: FC<PersonnelsPageProps> = ({ personnels, onAddPersonnel, o
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Bank accounts section */}
+                            <div className="border border-indigo-150 p-4 rounded-xl space-y-3 bg-indigo-50/5 shadow-3xs">
+                                <h4 className="text-2xs font-black text-indigo-900 uppercase tracking-wide border-b border-indigo-200/50 pb-1.5 flex items-center gap-1.5">💳 Comptes Bancaires associés({selectedPersonnel.bankAccounts?.length || 0})</h4>
+                                {!selectedPersonnel.bankAccounts || selectedPersonnel.bankAccounts.length === 0 ? (
+                                    <p className="text-xs text-gray-400 italic">Aucune coordonnée bancaire enregistrée pour ce personnel.</p>
+                                ) : (
+                                    <div className="space-y-1.5">
+                                        {selectedPersonnel.bankAccounts.map((acc, index) => (
+                                            <div key={index} className="flex justify-between items-center text-xs bg-white border border-indigo-100 p-2 rounded-lg font-mono font-bold text-indigo-950 shadow-3xs">
+                                                <span>🏦 {acc.bankName}</span>
+                                                <span className="text-gray-500 font-medium select-all">{acc.accountNumber}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* Return buttons */}

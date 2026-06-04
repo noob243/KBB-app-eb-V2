@@ -145,6 +145,22 @@ const AvocatsPage: FC<AvocatsPageProps> = ({ avocats, tasks = [], onAddAvocat })
                                             {selectedAvocat.disciplinaryMeasures || "Aucune mesure ou sanction disciplinaire n'est recensée au dossier."}
                                         </p>
                                     </div>
+
+                                    <div>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Comptes Bancaires ({selectedAvocat.bankAccounts?.length || 0})</span>
+                                        {!selectedAvocat.bankAccounts || selectedAvocat.bankAccounts.length === 0 ? (
+                                            <p className="text-xs text-gray-400 italic leading-relaxed bg-slate-50 border border-dashed border-gray-250 p-2.5 rounded-lg">Aucun compte bancaire configuré.</p>
+                                        ) : (
+                                            <div className="space-y-1.5 pt-1">
+                                                {selectedAvocat.bankAccounts.map((acc, idx) => (
+                                                    <div key={idx} className="bg-indigo-50/45 border border-indigo-100 rounded-lg p-2 flex justify-between items-center text-xs font-semibold text-indigo-900 font-mono shadow-3xs">
+                                                        <span className="font-bold">🏦 {acc.bankName}</span>
+                                                        <span className="text-gray-600 select-all">{acc.accountNumber}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 

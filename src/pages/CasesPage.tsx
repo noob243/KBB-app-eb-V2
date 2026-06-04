@@ -59,7 +59,7 @@ const CasesPage: FC<CasesPageProps> = ({ cases, clients, tasks = [], onAddCase, 
                 </div>
             </PageContainer>
             
-            <CaseModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSave={onAddCase} clients={clients} avocats={avocats} />
+            <CaseModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSave={onAddCase} clients={clients} avocats={avocats} cases={cases} />
 
             {/* Case Details / Management Modal */}
             {selectedCase && (() => {
@@ -97,34 +97,49 @@ const CasesPage: FC<CasesPageProps> = ({ cases, clients, tasks = [], onAddCase, 
 
                             {/* Procedure / Hearing Details */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                <div className="space-y-4">
-                                    <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                                        <span className="text-2xs font-extrabold text-slate-400 uppercase tracking-widest block mb-1">Prochaine Audience d'étape</span>
-                                        {selectedCase.nextHearing ? (
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-lg">📆</span>
-                                                <span className="text-sm font-bold text-rose-700">{selectedCase.nextHearing}</span>
-                                            </div>
-                                        ) : (
-                                            <p className="text-xs font-semibold text-gray-400 mt-1">Aucune audience programmée</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <span className="text-[10px] font-bold text-slate-450 uppercase block mb-1">Type de procédure</span>
-                                        <p className="text-sm font-semibold text-gray-800">{selectedCase.procedure || "Procédure d'Arbitrage Standard"}</p>
-                                    </div>
+                                <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl md:col-span-2">
+                                    <span className="text-2xs font-extrabold text-slate-400 uppercase tracking-widest block mb-1">Prochaine Audience d'étape</span>
+                                    {selectedCase.nextHearing ? (
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-sm">📆</span>
+                                            <span className="text-sm font-bold text-rose-750">{selectedCase.nextHearing}</span>
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs font-semibold text-gray-400 mt-1">Aucune audience programmée</p>
+                                    )}
                                 </div>
 
-                                <div className="space-y-4">
-                                    <div>
-                                        <span className="text-[10px] font-bold text-slate-450 uppercase block mb-1">Objet opérationnel</span>
-                                        <p className="text-sm font-semibold text-gray-800">{selectedCase.procedureObjet || "Litige contractuel de droit commercial"}</p>
-                                    </div>
-                                    <div>
-                                        <span className="text-[10px] font-bold text-slate-450 uppercase block mb-1">Date d'introduction</span>
-                                        <p className="text-sm font-semibold text-gray-800">{selectedCase.procedureDateDebut || "12 Janvier 2024"}</p>
-                                    </div>
+                                <div className="md:col-span-2 space-y-3 bg-indigo-50/15 border border-indigo-100/50 p-4 rounded-xl">
+                                    <span className="text-[10px] font-black text-[#15447c] uppercase tracking-wider block mb-2">⚖️ Procédures du Dossier</span>
+                                    {!selectedCase.procedures || selectedCase.procedures.length === 0 ? (
+                                        <div className="p-3 bg-white border border-slate-150 rounded-lg text-xs">
+                                            <p className="font-bold text-gray-800">{selectedCase.procedure || "Procédure d'Arbitrage Standard"}</p>
+                                            <p className="text-3xs text-gray-500 font-bold uppercase mt-1">
+                                                Instance: {selectedCase.procedureInstance || "Tribunal"} • Objet: {selectedCase.procedureObjet || "N/A"}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                            {selectedCase.procedures.map(p => (
+                                                <div key={p.id} className="p-3 bg-white border border-slate-150 rounded-xl flex items-start justify-between gap-4 shadow-3xs">
+                                                    <div>
+                                                        <p className="text-xs font-black text-slate-800 leading-tight">{p.name}</p>
+                                                        <p className="text-[10px] text-gray-500 font-semibold mt-1">
+                                                            Instance : <strong className="text-gray-700">{p.instance || 'Non précisée'}</strong> • Objet : <strong className="text-gray-700">{p.objet || 'Non défini'}</strong>
+                                                        </p>
+                                                        <p className="text-3xs text-slate-400 font-bold uppercase mt-0.5">Introduit le : {p.dateDebut || 'Non défini'} • Fin le : {p.dateFin || 'Non défini'}</p>
+                                                    </div>
+                                                    <span className={`px-2 py-0.5 rounded text-3xs font-bold uppercase tracking-wider border shrink-0 ${
+                                                        p.status === 'En cours' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                                                        p.status === 'Clôturé' ? 'bg-green-50 text-green-700 border-green-100' :
+                                                        'bg-amber-50 text-amber-700 border-amber-100'
+                                                    }`}>
+                                                        {p.status || 'En cours'}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

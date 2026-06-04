@@ -28,6 +28,7 @@ const PersonnelModal: FC<PersonnelModalProps> = ({ isOpen, onClose, onSave }) =>
     };
     const [formData, setFormData] = useState(initialFormState);
     const [previewUrl, setPreviewUrl] = useState<string>('');
+    const [bankAccounts, setBankAccounts] = useState<Array<{ bankName: string; accountNumber: string; iban?: string; swift?: string }>>([]);
 
     useEffect(() => {
         if (formData.fullName) {
@@ -43,10 +44,18 @@ const PersonnelModal: FC<PersonnelModalProps> = ({ isOpen, onClose, onSave }) =>
         if (!isOpen) {
             setFormData(initialFormState);
             setPreviewUrl('');
+            setBankAccounts([]);
         }
     }, [isOpen]);
     
     if (!isOpen) return null;
+
+    const handleClose = () => {
+        setFormData(initialFormState);
+        setPreviewUrl('');
+        setBankAccounts([]);
+        onClose();
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -74,6 +83,7 @@ const PersonnelModal: FC<PersonnelModalProps> = ({ isOpen, onClose, onSave }) =>
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        const validBankAccounts = bankAccounts.filter(acc => acc.bankName.trim() && acc.accountNumber.trim());
         const newPersonnel: Personnel = {
           id: formData.personnelId,
           fullName: formData.fullName,
@@ -89,7 +99,8 @@ const PersonnelModal: FC<PersonnelModalProps> = ({ isOpen, onClose, onSave }) =>
           address: formData.address,
           photo: formData.photo,
           disciplinaryMeasure: formData.disciplinaryMeasure || 'Aucune',
-          disciplinaryStatus: formData.disciplinaryStatus || 'Aucune'
+          disciplinaryStatus: formData.disciplinaryStatus || 'Aucune',
+          bankAccounts: validBankAccounts
         };
         onSave(newPersonnel);
         onClose();
@@ -103,7 +114,7 @@ const PersonnelModal: FC<PersonnelModalProps> = ({ isOpen, onClose, onSave }) =>
                         <h2 className="text-xl font-black text-gray-800 tracking-tight">Ajouter un nouveau personnel</h2>
                         <p className="text-2xs text-gray-400 font-bold mt-1 uppercase">Saisie d'un nouveau profil collaborateur</p>
                     </div>
-                    <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-lg text-gray-400 hover:text-gray-600 transition">
+                    <button onClick={handleClose} className="p-1 hover:bg-slate-100 rounded-lg text-gray-400 hover:text-gray-600 transition">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -345,10 +356,74 @@ const PersonnelModal: FC<PersonnelModalProps> = ({ isOpen, onClose, onSave }) =>
                         </div>
                     </div>
 
+                    {/* Dynamic bank accounts inputs */}
+                    <div className="border border-indigo-200/60 p-4 rounded-xl bg-indigo-50/15 max-w-full">
+                        <div className="flex justify-between items-center pb-2 border-b border-indigo-200/30 mb-3_">
+                            <label className="block text-xs font-black text-indigo-900 uppercase tracking-wider">💳 Comptes Bancaires associés ({bankAccounts.length})</label>
+                            <button 
+                                type="button" 
+                                onClick={() => setBankAccounts(prev => [...prev, { bankName: '', accountNumber: '' }])}
+                                className="bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-800 text-[10px] font-black px-2.5 py-1.5 rounded-lg uppercase transition shadow-2xs"
+                            >
+                                + Ajouter un compte bancaire
+                            </button>
+                        </div>
+                        {bankAccounts.length === 0 ? (
+                            <p className="text-2xs text-[#15447c]/60 italic font-medium px-1">Aucun compte bancaire enregistré. Cliquez sur "+ Ajouter un compte bancaire" pour configurer les informations de virement.</p>
+                        ) : (
+                            <div className="space-y-3 max-h-48 overflow-y-auto pt-1 pr-1">
+                                {bankAccounts.map((acc, index) => (
+                                    <div key={index} className="flex gap-2 items-center bg-white p-2.5 rounded-xl border border-gray-200 shadow-3xs animate-fadeIn">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+                                            <div>
+                                                <label className="block text-[9px] font-bold uppercase text-gray-400 mb-0.5">Nom de la Banque</label>
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Ex: Rawbank, Equity, etc." 
+                                                    value={acc.bankName}
+                                                    onChange={(e) => {
+                                                        const updated = [...bankAccounts];
+                                                        updated[index].bankName = e.target.value;
+                                                        setBankAccounts(updated);
+                                                    }}
+                                                    className="w-full p-2 border border-gray-300 rounded-lg text-xs font-bold"
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[9px] font-bold uppercase text-gray-400 mb-0.5">Numéro de Compte</label>
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Ex: 0101-1234567-89" 
+                                                    value={acc.accountNumber}
+                                                    onChange={(e) => {
+                                                        const updated = [...bankAccounts];
+                                                        updated[index].accountNumber = e.target.value;
+                                                        setBankAccounts(updated);
+                                                    }}
+                                                    className="w-full p-2 border border-gray-300 rounded-lg text-xs font-bold font-mono"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setBankAccounts(prev => prev.filter((_, idx) => idx !== index))}
+                                            className="p-1.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-650 hover:text-red-800 rounded-xl text-xs font-bold w-8 h-8 flex items-center justify-center transition shrink-0 self-end mb-0.5"
+                                            title="Supprimer ce compte"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     <div className="mt-8 flex justify-end space-x-3 pt-4 border-t border-gray-150">
                         <button 
                             type="button" 
-                            onClick={onClose} 
+                            onClick={handleClose} 
                             className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 px-6 rounded-xl transition duration-150 text-xs border border-gray-200"
                         >
                             Annuler

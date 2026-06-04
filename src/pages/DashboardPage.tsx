@@ -145,8 +145,8 @@ const DashboardPage: FC<DashboardPageProps> = ({ clients, cases, events, tasks =
     return (
         <div className="space-y-8 animate-fade-in">
             <div>
-                <h1 className="text-3xl font-bold text-slate-900 font-outfit mb-1 tracking-tight">Tableau de Bord</h1>
-                <p className="text-sm text-slate-500">Vue d'ensemble en temps réel de l'activité du cabinet KBB.</p>
+                <h1 className="text-3xl font-bold text-gray-800 mb-1">Tableau de Bord</h1>
+                <p className="text-sm text-gray-500">Vue d'ensemble en temps réel de l'activité du cabinet KBB.</p>
             </div>
 
             {/* Metrics Grid */}

@@ -109,7 +109,7 @@ const Header: FC<HeaderProps> = ({
   };
 
   return (
-    <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 h-16 px-8 flex items-center justify-between shadow-sm relative z-40">
+    <header className="bg-white border-b border-gray-100 h-16 px-8 flex items-center justify-between shadow-sm relative z-50">
       {/* Global Search Bar */}
       <div ref={containerRef} className="w-full max-w-xl relative">
         <div className="relative">
@@ -330,12 +330,12 @@ const Header: FC<HeaderProps> = ({
       {/* User Context Info (Right Side of Header) */}
       <div className="flex items-center space-x-4">
         <div className="hidden md:flex flex-col text-right">
-          <span className="text-sm font-bold text-slate-800 font-outfit">Jean-Luc Tshisekedi</span>
-          <span className="text-3xs font-black tracking-widest text-slate-500 uppercase">Avocat Associé KBB</span>
+          <span className="text-xs font-bold text-gray-800">Jean-Luc Tshisekedi</span>
+          <span className="text-3xs font-black tracking-widest text-[#15447c] uppercase">Avocat Associé KBB</span>
         </div>
-        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 text-white flex items-center justify-center font-bold text-sm shadow-md border border-slate-700 relative font-outfit">
+        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#15447c] to-indigo-800 text-white flex items-center justify-center font-bold text-sm shadow-md border border-indigo-100 relative">
           JT
-          <span className="absolute -bottom-1 -right-1 block h-3 w-3 rounded-full bg-emerald-500 border-2 border-white"></span>
+          <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white"></span>
         </div>
       </div>
     </header>

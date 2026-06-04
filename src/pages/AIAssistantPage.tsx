@@ -28,7 +28,7 @@ interface Conversation {
 const AIAssistantPage: FC<AIAssistantPageProps> = ({ clients, cases, tasks, invoices }) => {
     const initialAssistantMessage: Message = { 
         role: 'assistant', 
-        content: "Bonjour ! Je suis Otsudi AI, l'assistant IA de KBB App. Je suis maintenant directement connecté à votre base de données. Je peux analyser vos dossiers, calculer vos balances de facturation par client ou identifier vos retards de tâches. Comment puis-je vous aider ?",
+        content: "Bonjour ! Je suis Otshudi AI, l'assistant IA de KBB App. Je suis maintenant directement connecté à votre base de données. Je peux analyser vos dossiers, calculer vos balances de facturation par client ou identifier vos retards de tâches. Comment puis-je vous aider ?",
         feedback: null
     };
 
@@ -212,7 +212,7 @@ const AIAssistantPage: FC<AIAssistantPageProps> = ({ clients, cases, tasks, invo
             const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
             
             const systemInstruction = `
-                Tu es Otsudi AI, l'assistant expert du cabinet d'avocats KBB. Tu as un accès direct aux données structurées suivantes :
+                Tu es Otshudi AI, l'assistant expert du cabinet d'avocats KBB. Tu as un accès direct aux données structurées suivantes :
                 ${JSON.stringify(dataContextSummary)}
 
                 TES MISSIONS :
@@ -394,7 +394,7 @@ const AIAssistantPage: FC<AIAssistantPageProps> = ({ clients, cases, tasks, invo
                             <span className="bg-gradient-to-br from-indigo-500 to-indigo-700 text-white p-2 rounded-xl mr-3 shadow-xl shadow-indigo-500/20">
                                 <AIIcon />
                             </span>
-                            Otsudi AI
+                            Otshudi AI
                         </h1>
                         <p className={`text-[10px] mt-1 font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-600' : 'text-slate-400'}`}>
                             Moteur : Gemini 3 Flash • Analyse Directe Active

@@ -1,6 +1,8 @@
 import React, { FC, useState } from 'react';
 import PageContainer from '../components/PageContainer';
 import { Client, Case, Event, Task, Invoice, Avocat, Personnel } from '../types';
+import { DetailedEditModal } from '../components/DetailedEditModal';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface GestionPageProps {
     clients: Client[];
@@ -32,6 +34,63 @@ const GestionPage: FC<GestionPageProps> = (props) => {
     const [editingType, setEditingType] = useState<'client' | 'case' | 'avocat' | 'personnel' | null>(null);
     const [editingId, setEditingId] = useState<string | number | null>(null);
     const [editForm, setEditForm] = useState<any>({});
+
+    // Detailed edit states
+    const [detailedEditingType, setDetailedEditingType] = useState<'client' | 'case' | 'avocat' | 'personnel' | null>(null);
+    const [detailedEditForm, setDetailedEditForm] = useState<any>(null);
+
+    const startDetailedEdit = (type: 'client' | 'case' | 'avocat' | 'personnel', item: any) => {
+        setDetailedEditingType(type);
+        setDetailedEditForm(JSON.parse(JSON.stringify(item)));
+    };
+
+    const closeDetailedEdit = () => {
+        setDetailedEditingType(null);
+        setDetailedEditForm(null);
+    };
+
+    const handleDetailedFieldChange = (field: string, value: any) => {
+        setDetailedEditForm((prev: any) => {
+            if (!prev) return prev;
+            const up = { ...prev, [field]: value };
+            if (field === 'hasChildren' && value === 'Non') {
+                up.childrenCount = 0;
+            }
+            return up;
+        });
+    };
+
+    const saveDetailedEdit = () => {
+        if (!detailedEditForm) return;
+        if (detailedEditingType === 'client') {
+            props.onUpdateClient(detailedEditForm as Client);
+        } else if (detailedEditingType === 'case') {
+            // Sync backward compatibility properties from the first procedure of the case
+            const updatedForm = { ...detailedEditForm };
+            if (updatedForm.procedures && updatedForm.procedures.length > 0) {
+                const primaryProc = updatedForm.procedures[0];
+                updatedForm.procedure = primaryProc?.name || '';
+                updatedForm.procedureInstance = primaryProc?.instance || '';
+                updatedForm.procedureObjet = primaryProc?.objet || '';
+                updatedForm.procedureDateDebut = primaryProc?.dateDebut || '';
+                updatedForm.procedureDateFin = primaryProc?.dateFin || '';
+                updatedForm.procedureStatus = primaryProc?.status || '';
+            } else {
+                updatedForm.procedure = '';
+                updatedForm.procedureInstance = '';
+                updatedForm.procedureObjet = '';
+                updatedForm.procedureDateDebut = '';
+                updatedForm.procedureDateFin = '';
+                updatedForm.procedureStatus = '';
+            }
+            props.onUpdateCase(updatedForm as Case);
+        } else if (detailedEditingType === 'avocat') {
+            props.onUpdateAvocat(detailedEditForm as Avocat);
+        } else if (detailedEditingType === 'personnel') {
+            props.onUpdatePersonnel(detailedEditForm as Personnel);
+        }
+        closeDetailedEdit();
+    };
 
     const startEdit = (type: 'client' | 'case' | 'avocat' | 'personnel', item: any) => {
         setEditingType(type);
@@ -75,11 +134,70 @@ const GestionPage: FC<GestionPageProps> = (props) => {
         }
     };
     
+    // Calculate completed tasks per lawyer for workload visualization
+    const lawyerCompletedTaskCounts = props.avocats.map(avocat => {
+        const completedTasksCount = props.tasks.filter(task => 
+            task.lawyer && 
+            task.lawyer.trim().toLowerCase() === avocat.fullName.trim().toLowerCase() && 
+            task.status === 'Effectué'
+        ).length;
+        
+        return {
+            name: avocat.fullName,
+            completed: completedTasksCount
+        };
+    });
+
     return (
         <PageContainer title="Panneau de Gestion (Admin)">
             <p className="mb-8 text-xs text-gray-500 font-bold bg-slate-50 border border-gray-150 p-3.5 rounded-xl max-w-2xl leading-relaxed">
                 🛡️ <span className="text-[#15447c] font-black">Console Administrateur KBB KIN-SERVICES</span>. Saisissez, modifiez et contrôlez toutes les informations de l'application en temps réel avec sauvegarde automatique.
             </p>
+
+            {/* WORKLOAD BAR CHART */}
+            <div className="bg-white rounded-2xl border border-gray-150 p-6 mb-10 shadow-xs max-w-4xl">
+                <div className="mb-4">
+                    <h3 className="text-sm font-black text-gray-800 tracking-tight flex items-center gap-1.5">
+                        📈 Charge de travail par Avocat
+                    </h3>
+                    <p className="text-[10px] text-gray-450 font-bold mt-0.5">Nombre de tâches officiellement terminées (Statut: Effectué) pour chaque avocat</p>
+                </div>
+                <div className="h-[250px] w-full mt-4">
+                    {lawyerCompletedTaskCounts.length === 0 ? (
+                        <div className="h-full flex items-center justify-center text-xs text-gray-400 italic">
+                            Aucun avocat enregistré pour générer le graphique.
+                        </div>
+                    ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={lawyerCompletedTaskCounts} margin={{ top: 10, right: 10, left: -25, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <XAxis 
+                                    dataKey="name" 
+                                    tick={{ fill: '#64748b', fontSize: 9, fontWeight: 700 }} 
+                                    axisLine={false}
+                                    tickLine={false}
+                                />
+                                <YAxis 
+                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 600 }} 
+                                    axisLine={false}
+                                    tickLine={false}
+                                    allowDecimals={false}
+                                />
+                                <Tooltip 
+                                    contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', fontSize: '11px', fontWeight: 'bold' }} 
+                                    labelStyle={{ color: '#0f172a', fontWeight: '800' }}
+                                />
+                                <Bar dataKey="completed" name="Tâches complétées" radius={[6, 6, 0, 0]} barSize={28}>
+                                    {lawyerCompletedTaskCounts.map((entry, index) => {
+                                        const colors = ['#15447c', '#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#3b82f6'];
+                                        return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                                    })}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )}
+                </div>
+            </div>
             
             {/* Section Avocats */}
             <div className="bg-white rounded-2xl border border-gray-150 overflow-hidden shadow-xs mb-10">
@@ -185,8 +303,23 @@ const GestionPage: FC<GestionPageProps> = (props) => {
                                                 <td className={`${tableCellClass} font-semibold text-slate-650`}>{item.cabinetRole || 'Non spécifié'}</td>
                                                 <td className={`${tableCellClass} font-mono font-bold text-gray-500`}>{item.phone || '-'}</td>
                                                 <td className={`${tableCellClass} text-right whitespace-nowrap`}>
-                                                    <button onClick={() => startEdit('avocat', item)} className={actionButtonClass}>Modifier</button>
-                                                    <button onClick={() => handleDelete(props.onDeleteAvocat, item.id, 'avocat')} className={deleteButtonClass}>Supprimer</button>
+                                                    <div className="inline-flex gap-1">
+                                                        <button 
+                                                            onClick={() => startEdit('avocat', item)} 
+                                                            className="font-extrabold text-[10px] text-indigo-600 hover:text-indigo-850 bg-indigo-50 hover:bg-indigo-100/70 px-2 py-1.5 rounded-lg transition"
+                                                            title="Modification rapide inline"
+                                                        >
+                                                            ⚡ Rapide
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => startDetailedEdit('avocat', item)} 
+                                                            className="font-extrabold text-[10px] text-amber-700 hover:text-amber-850 bg-amber-50 hover:bg-amber-100/60 px-2 py-1.5 rounded-lg transition"
+                                                            title="Modifier tous les champs"
+                                                        >
+                                                            ⚙️ Détaillé
+                                                        </button>
+                                                        <button onClick={() => handleDelete(props.onDeleteAvocat, item.id, 'avocat')} className={deleteButtonClass}>Supprimer</button>
+                                                    </div>
                                                 </td>
                                             </>
                                         )}
@@ -259,17 +392,38 @@ const GestionPage: FC<GestionPageProps> = (props) => {
                                                     />
                                                 </td>
                                                 <td className={tableCellClass}>
-                                                    <select 
-                                                        value={editForm.typeFacturation || 'Forfaitaire'} 
-                                                        onChange={(e) => handleFieldChange('typeFacturation', e.target.value)}
-                                                        className="p-1.5 border border-indigo-400/50 rounded-lg text-xs font-bold w-full bg-white focus:outline-hidden"
-                                                    >
-                                                        <option value="Forfaitaire">Forfaitaire</option>
-                                                        <option value="Taux horaire">Taux horaire</option>
-                                                        <option value="Abonnement mensuel">Abonnement mensuel</option>
-                                                        <option value="Abonnement annuel">Abonnement annuel</option>
-                                                        <option value="Au dossier (Ponctuelle)">Au dossier (Ponctuelle)</option>
-                                                    </select>
+                                                    <div className="flex flex-col gap-1 max-h-24 overflow-y-auto p-1 border border-indigo-300 bg-white rounded-lg select-none min-w-[120px]">
+                                                        {[
+                                                            'Forfaitaire',
+                                                            'Taux horaire',
+                                                            'Abonnement mensuel',
+                                                            'Abonnement annuel',
+                                                            'Au dossier (Ponctuelle)'
+                                                        ].map(opt => {
+                                                            const currentTypes = (editForm.typeFacturation || '').split(',').map((t: string) => t.trim()).filter(Boolean);
+                                                            const isChecked = currentTypes.includes(opt);
+                                                            return (
+                                                                <label key={opt} className="flex items-center gap-1 cursor-pointer text-[10px] whitespace-nowrap text-gray-700 hover:bg-slate-50 font-bold p-0.5">
+                                                                    <input 
+                                                                        type="checkbox"
+                                                                        checked={isChecked}
+                                                                        onChange={() => {
+                                                                            let newTypes;
+                                                                            if (isChecked) {
+                                                                                newTypes = currentTypes.filter((t: string) => t !== opt);
+                                                                            } else {
+                                                                                newTypes = [...currentTypes, opt];
+                                                                            }
+                                                                            handleFieldChange('typeFacturation', newTypes.join(', '));
+                                                                        }}
+                                                                        className="h-3 w-3 text-indigo-600 rounded border-gray-300"
+                                                                        id={`opt-${opt}`}
+                                                                    />
+                                                                    <span>{opt}</span>
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 </td>
                                                 <td className={tableCellClass}>
                                                     <input 
@@ -297,8 +451,23 @@ const GestionPage: FC<GestionPageProps> = (props) => {
                                                 </td>
                                                 <td className={`${tableCellClass} text-gray-700 font-medium truncate max-w-[130px]`} title={item.siege}>{item.siege || '-'}</td>
                                                 <td className={`${tableCellClass} text-right whitespace-nowrap`}>
-                                                    <button onClick={() => startEdit('client', item)} className={actionButtonClass}>Modifier</button>
-                                                    <button onClick={() => handleDelete(props.onDeleteClient, item.id, 'client')} className={deleteButtonClass}>Supprimer</button>
+                                                    <div className="inline-flex gap-1">
+                                                        <button 
+                                                            onClick={() => startEdit('client', item)} 
+                                                            className="font-extrabold text-[10px] text-indigo-600 hover:text-indigo-850 bg-indigo-50 hover:bg-indigo-100/70 px-2 py-1.5 rounded-lg transition"
+                                                            title="Modification rapide inline"
+                                                        >
+                                                            ⚡ Rapide
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => startDetailedEdit('client', item)} 
+                                                            className="font-extrabold text-[10px] text-amber-700 hover:text-amber-850 bg-amber-50 hover:bg-amber-100/60 px-2 py-1.5 rounded-lg transition"
+                                                            title="Modifier tous les champs"
+                                                        >
+                                                            ⚙️ Détaillé
+                                                        </button>
+                                                        <button onClick={() => handleDelete(props.onDeleteClient, item.id, 'client')} className={deleteButtonClass}>Supprimer</button>
+                                                    </div>
                                                 </td>
                                             </>
                                         )}
@@ -399,8 +568,23 @@ const GestionPage: FC<GestionPageProps> = (props) => {
                                                     {item.notes || <span className="text-gray-300 italic">Aucune note</span>}
                                                 </td>
                                                 <td className={`${tableCellClass} text-right whitespace-nowrap`}>
-                                                    <button onClick={() => startEdit('case', item)} className={actionButtonClass}>Modifier</button>
-                                                    <button onClick={() => handleDelete(props.onDeleteCase, item.id, 'dossier')} className={deleteButtonClass}>Supprimer</button>
+                                                    <div className="inline-flex gap-1">
+                                                        <button 
+                                                            onClick={() => startEdit('case', item)} 
+                                                            className="font-extrabold text-[10px] text-indigo-600 hover:text-indigo-850 bg-indigo-50 hover:bg-indigo-100/70 px-2 py-1.5 rounded-lg transition"
+                                                            title="Modification rapide inline"
+                                                        >
+                                                            ⚡ Rapide
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => startDetailedEdit('case', item)} 
+                                                            className="font-extrabold text-[10px] text-amber-700 hover:text-amber-850 bg-amber-50 hover:bg-amber-100/60 px-2 py-1.5 rounded-lg transition"
+                                                            title="Modifier tous les champs"
+                                                        >
+                                                            ⚙️ Détaillé
+                                                        </button>
+                                                        <button onClick={() => handleDelete(props.onDeleteCase, item.id, 'dossier')} className={deleteButtonClass}>Supprimer</button>
+                                                    </div>
                                                 </td>
                                             </>
                                         )}
@@ -585,8 +769,23 @@ const GestionPage: FC<GestionPageProps> = (props) => {
                                                     )}
                                                 </td>
                                                 <td className={`${tableCellClass} text-right whitespace-nowrap`}>
-                                                    <button onClick={() => startEdit('personnel', item)} className={actionButtonClass}>Modifier</button>
-                                                    <button onClick={() => handleDelete(props.onDeletePersonnel, item.id, 'personnel')} className={deleteButtonClass}>Supprimer</button>
+                                                    <div className="inline-flex gap-1">
+                                                        <button 
+                                                            onClick={() => startEdit('personnel', item)} 
+                                                            className="font-extrabold text-[10px] text-indigo-600 hover:text-indigo-850 bg-indigo-50 hover:bg-indigo-100/70 px-2 py-1.5 rounded-lg transition"
+                                                            title="Modification rapide inline"
+                                                        >
+                                                            ⚡ Rapide
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => startDetailedEdit('personnel', item)} 
+                                                            className="font-extrabold text-[10px] text-amber-700 hover:text-amber-850 bg-amber-50 hover:bg-amber-100/60 px-2 py-1.5 rounded-lg transition"
+                                                            title="Modifier tous les champs"
+                                                        >
+                                                            ⚙️ Détaillé
+                                                        </button>
+                                                        <button onClick={() => handleDelete(props.onDeletePersonnel, item.id, 'personnel')} className={deleteButtonClass}>Supprimer</button>
+                                                    </div>
                                                 </td>
                                             </>
                                         )}
@@ -597,6 +796,28 @@ const GestionPage: FC<GestionPageProps> = (props) => {
                     </table>
                 </div>
             </div>
+
+            {/* MODAL DE MODIFICATION DÉTAILLÉE (MODULAIRE ET PROPRE) */}
+            {detailedEditingType && detailedEditForm && (
+                <DetailedEditModal
+                    type={detailedEditingType}
+                    item={detailedEditForm}
+                    clients={props.clients}
+                    onClose={closeDetailedEdit}
+                    onSave={(updatedItem) => {
+                        if (detailedEditingType === 'client') {
+                            props.onUpdateClient(updatedItem as Client);
+                        } else if (detailedEditingType === 'case') {
+                            props.onUpdateCase(updatedItem as Case);
+                        } else if (detailedEditingType === 'avocat') {
+                            props.onUpdateAvocat(updatedItem as Avocat);
+                        } else if (detailedEditingType === 'personnel') {
+                            props.onUpdatePersonnel(updatedItem as Personnel);
+                        }
+                        closeDetailedEdit();
+                    }}
+                />
+            )}
         </PageContainer>
     );
 };

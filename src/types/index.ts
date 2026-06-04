@@ -19,6 +19,17 @@ export interface Client {
   typeFacturation?: string;
 }
 
+export interface CaseProcedure {
+  id: string;
+  name: string;
+  instance?: string;
+  objet?: string;
+  dateDebut?: string;
+  dateFin?: string;
+  status?: string;
+  linkedCases?: string[]; // dossier IDs linked to this procedure
+}
+
 export interface Case {
   id: string;
   name: string;
@@ -32,6 +43,7 @@ export interface Case {
   procedureDateFin?: string;
   procedureStatus?: string;
   notes?: string;
+  procedures?: CaseProcedure[];
 }
 
 export interface EventReport {
@@ -61,10 +73,18 @@ export interface Event {
   reports?: EventReport[];
 }
 
+export interface BankAccount {
+  bankName: string;
+  accountNumber: string;
+  iban?: string;
+  swift?: string;
+}
+
 export interface Avocat {
   id: string;
   fullName: string;
   photo: File | null;
+  photoUrl?: string;
   firstOathDate: string;
   secondOathDate: string;
   onaNumber: string;
@@ -77,6 +97,12 @@ export interface Avocat {
   disciplinaryMeasures: string;
   mainBar?: 'Kinshasa-Gombe' | 'Kinshasa-Matete' | 'Lualaba' | 'Haut Katanga' | 'Kwilu';
   secondaryBar?: string;
+  barreaux?: string[];
+  maritalStatus?: 'Célibataire' | 'Marié(e)' | 'Divorcé(e)' | 'Veuf(ve)';
+  physicalAddress?: string;
+  hasChildren?: 'Oui' | 'Non';
+  childrenCount?: number;
+  bankAccounts?: BankAccount[];
 }
 
 export interface Task {
@@ -88,6 +114,7 @@ export interface Task {
   status: 'Effectué' | 'Non effectué' | 'Effectué à moitié';
   notes?: string;
   procedureLinked?: string;
+  procedureLinkedIds?: string[];
   startDate?: string;
   endDate?: string;
   associatedLawyers?: string[];
@@ -119,6 +146,7 @@ export interface Personnel {
   photo?: string;
   disciplinaryMeasure?: string;
   disciplinaryStatus?: string;
+  bankAccounts?: BankAccount[];
 }
 
 export interface Referent {
