@@ -128,7 +128,62 @@ start.bat
 
 ---
 
-## 📝 Licence
+## � Déploiement
+
+### Déploiement sur Netlify
+
+#### 1. Configuration initiale sur Netlify
+
+1. Créez un compte sur [Netlify](https://netlify.com) (connectez-vous avec GitHub)
+2. Cliquez sur **New site from Git**
+3. Sélectionnez GitHub et autorisez l'accès à vos dépôts
+4. Choisissez le dépôt `KBB-app-eb-V2`
+
+#### 2. Configuration des variables d'environnement
+
+Sur le tableau de bord Netlify :
+1. Allez dans **Site settings** → **Environment variables**
+2. Ajoutez les variables suivantes :
+
+```
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_GOOGLE_API_KEY=your_google_api_key
+```
+
+#### 3. Build et Déploiement
+
+Les paramètres suivants sont déjà configurés dans `netlify.toml` :
+- **Commande de build** : `npm run build`
+- **Dossier de publication** : `dist`
+- **Node version** : 18
+
+Le déploiement se fera automatiquement à chaque push sur `main`.
+
+### Intégration Supabase
+
+#### 1. Configuration Supabase
+
+1. Créez un projet sur [Supabase](https://supabase.com)
+2. Dans **Settings** → **API** :
+   - Copiez l'URL du projet (`VITE_SUPABASE_URL`)
+   - Copiez la clé publique (`VITE_SUPABASE_ANON_KEY`)
+3. Importez le schéma SQL depuis `supabase/schema.sql`
+
+#### 2. Authentification et RLS
+
+- Les políticas de sécurité RLS (Row Level Security) doivent être configurées dans Supabase
+- L'authentification se fait via les tokens JWT générés par Supabase
+
+#### 3. Synchronisation des données
+
+Les données sont synchronisées entre l'application et Supabase :
+- Vérifiez `src/lib/supabase.ts` pour les détails de configuration
+- Les requêtes API utilisent les clients Supabase authentifiés
+
+---
+
+## �📝 Licence
 
 Ce projet est sous licence [MIT](./LICENSE).
 
