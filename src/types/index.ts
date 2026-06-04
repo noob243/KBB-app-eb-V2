@@ -3,20 +3,16 @@ export interface Client {
   id: number;
   name: string;
   contact: string;
-  cases: number;
   email?: string;
   phone?: string;
   secteur?: string;
   siege?: string;
-  sieges?: string[];
   dirigeant?: string;
-  ref1_nom?: string;
-  ref1_phone?: string;
-  ref1_email?: string;
-  ref2_nom?: string;
-  ref2_phone?: string;
-  ref2_email?: string;
   typeFacturation?: string;
+  created_at?: string;
+  updated_at?: string;
+  // cases: Calculer via COUNT(*) FROM cases WHERE client_id
+  // referents: Charger via client_referents table
 }
 
 export interface CaseProcedure {
@@ -32,8 +28,10 @@ export interface CaseProcedure {
 
 export interface Case {
   id: string;
+  reference: string;
   name: string;
-  client: string;
+  clientId: number;
+  client?: string;
   status: 'Nouveau' | 'En cours' | 'En attente' | 'Clôturé';
   nextHearing: string | null;
   procedure?: string;
@@ -44,6 +42,8 @@ export interface Case {
   procedureStatus?: string;
   notes?: string;
   procedures?: CaseProcedure[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface EventReport {
@@ -65,12 +65,13 @@ export interface Event {
   publicCible?: string;
   membresKBB?: string;
   membresExternes?: string;
-  budgetPrevisionnel?: string;
-  budgetRealise?: string;
-  financement?: string;
-  financements?: Array<{ label: string; amount: string }>;
+  budgetPrevisionnel?: number;
+  budgetRealise?: number;
+  financements?: Array<{ label: string; amount: number }>;
   sponsors?: string;
   reports?: EventReport[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface BankAccount {
@@ -100,9 +101,11 @@ export interface Avocat {
   barreaux?: string[];
   maritalStatus?: 'Célibataire' | 'Marié(e)' | 'Divorcé(e)' | 'Veuf(ve)';
   physicalAddress?: string;
-  hasChildren?: 'Oui' | 'Non';
+  hasChildren?: boolean;
   childrenCount?: number;
   bankAccounts?: BankAccount[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Task {
@@ -123,11 +126,14 @@ export interface Task {
 
 export interface Invoice {
   id: string;
+  reference: string;
   caseId: string;
   dueDate: string;
   totalAmount: number;
   paidAmount: number;
   status: 'Réglée' | 'Non réglée' | 'En cours';
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Personnel {
@@ -140,13 +146,15 @@ export interface Personnel {
   serviceStatus: 'Actif' | 'Inactif' | 'Mise en disponibilité';
   salary: number;
   maritalStatus: 'Célibataire' | 'Marié(e)' | 'Divorcé(e)' | 'Veuf(ve)';
-  hasChildren: 'Oui' | 'Non';
+  hasChildren?: boolean;
   childrenCount?: number;
   address: string;
   photo?: string;
   disciplinaryMeasure?: string;
   disciplinaryStatus?: string;
   bankAccounts?: BankAccount[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Referent {
