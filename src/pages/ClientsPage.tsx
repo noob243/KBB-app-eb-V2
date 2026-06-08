@@ -33,7 +33,7 @@ const ClientsPage: FC<ClientsPageProps> = ({ clients, cases = [], onAddClient, o
         }
 
         const email = client.email || `${client.contact.toLowerCase().replace(/\s+/g, '.')}@${client.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`;
-        const phone = client.phone || `+243 81 234 ${100 + client.id * 17}`;
+        const phone = client.phone || `+243 81 234 ${100 + parseInt(client.id, 36) % 1000}`;
 
         return { sector, localAddress, email, phone };
     };
@@ -81,7 +81,7 @@ const ClientsPage: FC<ClientsPageProps> = ({ clients, cases = [], onAddClient, o
             {/* Client Details Modal */}
             {selectedClient && (() => {
                 const details = getClientDetails(selectedClient);
-                const clientCases = cases.filter(c => c.client.toLowerCase() === selectedClient.name.toLowerCase());
+                const clientCases = cases.filter(c => c.client && c.client.toLowerCase() === selectedClient.name.toLowerCase());
                 
                 return (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-4">

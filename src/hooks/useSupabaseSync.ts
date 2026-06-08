@@ -136,7 +136,7 @@ const syncWithSupabase = async <T extends { id: string | number }>(
       
       if (error) {
         console.error(`Erreur lors de la mise à jour de ${tableName} (id: ${item.id}):`, error);
-      }
+      } 
     }
     console.log(`✅ ${updated.length} élément(s) mis à jour dans ${tableName}`);
   }

@@ -87,43 +87,33 @@ function App() {
 
     // --- Data Handlers ---
     const handleAddClient = (newClient: Omit<Client, 'id'>) => {
-        setClients(prev => [...prev, { ...newClient, id: (prev.length > 0 ? Math.max(...prev.map(c => c.id)) : 0) + 1 }]);
+        setClients(prev => [...prev, { ...newClient, id: crypto.randomUUID() }]);
     };
-    const handleAddCase = (newCase: Case, tasksToAdd?: Omit<Task, 'id'>[]) => {
-        setCases(prev => [...prev, newCase]);
-        if (tasksToAdd && tasksToAdd.length > 0) {
-            setTasks(prev => {
-                let currentMaxId = prev.length > 0 ? Math.max(...prev.map(t => t.id)) : 0;
-                const newTasksWithIds = tasksToAdd.map(t => ({
-                    ...t,
-                    id: ++currentMaxId
-                }));
-                return [...prev, ...newTasksWithIds];
-            });
-        }
+    const handleAddCase = (newCase: Omit<Case, 'id'>) => {
+        setCases(prev => [...prev, { ...newCase, id: crypto.randomUUID() }]);
     };
-    const handleAddEvent = (newEvent: Event) => setEvents(prev => [...prev, newEvent]);
+    const handleAddEvent = (newEvent: Omit<Event, 'id'>) => setEvents(prev => [...prev, { ...newEvent, id: crypto.randomUUID() }]);
     const handleUpdateEvent = (updatedEvent: Event) => {
         setEvents(prev => prev.map(e => e.id === updatedEvent.id ? updatedEvent : e));
     };
     const handleAddTask = (newTask: Omit<Task, 'id'>) => {
-        setTasks(prev => [...prev, { ...newTask, id: (prev.length > 0 ? Math.max(...prev.map(t => t.id)) : 0) + 1 }]);
+        setTasks(prev => [...prev, { ...newTask, id: crypto.randomUUID() }]);
     };
-    const handleUpdateTaskStatus = (id: number, status: 'Effectué' | 'Non effectué' | 'Effectué à moitié') => {
+    const handleUpdateTaskStatus = (id: string, status: 'Effectué' | 'Non effectué' | 'Effectué à moitié') => {
         setTasks(prev => prev.map(t => t.id === id ? { ...t, status } : t));
     };
-    const handleAddInvoice = (newInvoice: Invoice) => setInvoices(prev => [...prev, newInvoice]);
-    const handleAddAvocat = (newAvocat: Avocat) => setAvocats(prev => [...prev, newAvocat]);
-    const handleAddPersonnel = (newPersonnel: Personnel) => setPersonnels(prev => [...prev, newPersonnel]);
-    const handleAddFournisseur = (newFournisseur: Fournisseur) => setFournisseurs(prev => [...prev, newFournisseur]);
+    const handleAddInvoice = (newInvoice: Omit<Invoice, 'id'>) => setInvoices(prev => [...prev, { ...newInvoice, id: crypto.randomUUID() }]);
+    const handleAddAvocat = (newAvocat: Omit<Avocat, 'id'>) => setAvocats(prev => [...prev, { ...newAvocat, id: crypto.randomUUID() }]);
+    const handleAddPersonnel = (newPersonnel: Omit<Personnel, 'id'>) => setPersonnels(prev => [...prev, { ...newPersonnel, id: crypto.randomUUID() }]);
+    const handleAddFournisseur = (newFournisseur: Omit<Fournisseur, 'id'>) => setFournisseurs(prev => [...prev, { ...newFournisseur, id: crypto.randomUUID() }]);
 
-    const handleDeleteClient = (id: number) => setClients(clients.filter(c => c.id !== id));
+    const handleDeleteClient = (id: string) => setClients(clients.filter(c => c.id !== id));
     const handleDeleteCase = (id: string) => setCases(cases.filter(c => c.id !== id));
     const handleDeleteAvocat = (id: string) => setAvocats(avocats.filter(a => a.id !== id));
     const handleDeletePersonnel = (id: string) => setPersonnels(personnels.filter(p => p.id !== id));
     const handleDeleteFournisseur = (id: string) => setFournisseurs(fournisseurs.filter(f => f.id !== id));
     const handleDeleteEvent = (id: string) => setEvents(events.filter(e => e.id !== id));
-    const handleDeleteTask = (id: number) => setTasks(tasks.filter(t => t.id !== id));
+    const handleDeleteTask = (id: string) => setTasks(tasks.filter(t => t.id !== id));
     const handleDeleteInvoice = (id: string) => setInvoices(invoices.filter(i => i.id !== id));
 
     const handleUpdateClient = (updated: Client) => setClients(prev => prev.map(c => c.id === updated.id ? updated : c));
@@ -139,7 +129,7 @@ function App() {
     const filteredCases = cases.filter(c => 
         c.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
         c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        c.client.toLowerCase().includes(searchQuery.toLowerCase())
+        (c.client && c.client.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     const filteredEvents = events.filter(e => 

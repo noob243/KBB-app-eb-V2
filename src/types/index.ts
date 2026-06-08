@@ -1,6 +1,6 @@
 
 export interface Client {
-  id: number;
+  id: string;
   name: string;
   contact: string;
   email?: string;
@@ -11,7 +11,8 @@ export interface Client {
   typeFacturation?: string;
   created_at?: string;
   updated_at?: string;
-  // cases: Calculer via COUNT(*) FROM cases WHERE client_id
+  cases?: number;
+  sieges?: string[];
   // referents: Charger via client_referents table
 }
 
@@ -30,7 +31,7 @@ export interface Case {
   id: string;
   reference: string;
   name: string;
-  clientId: number;
+  clientId: string;
   client?: string;
   status: 'Nouveau' | 'En cours' | 'En attente' | 'Clôturé';
   nextHearing: string | null;
@@ -109,7 +110,7 @@ export interface Avocat {
 }
 
 export interface Task {
-  id: number;
+  id: string;
   name: string;
   caseId: string;
   lawyer: string;
@@ -176,4 +177,3 @@ export interface Fournisseur {
   dirigeantPrincipal: string;
   referents: Referent[];
 }
-
