@@ -37,3 +37,7 @@ metadata.json
 
 # OS files
 Thumbs.db
+
+# Environment variables (never commit)
+.env
+.env.local
