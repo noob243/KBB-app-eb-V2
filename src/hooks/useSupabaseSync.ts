@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 /**
@@ -24,11 +24,12 @@ export const useSupabaseSync = <T extends { id: string | number }>(
   });
 
   const previousStateRef = useRef<T[]>(initialValue);
+  const isLoadedFromSupabase = useRef(false);
 
   // Au montage : charger depuis Supabase si disponible
   useEffect(() => {
     const loadFromSupabase = async () => {
-      if (!isSupabaseConfigured || !tableName) {
+      if (!isSupabaseConfigured || !tableName || isLoadedFromSupabase.current) {
         return;
       }
 
@@ -46,8 +47,21 @@ export const useSupabaseSync = <T extends { id: string | number }>(
           const loadedData = data as T[];
           setState(loadedData);
           previousStateRef.current = loadedData;
-          // Mettre à jour localStorage aussi
           window.localStorage.setItem(key, JSON.stringify(loadedData));
+          isLoadedFromSupabase.current = true;
+        } else {
+          isLoadedFromSupabase.current = true;
+          // Si Supabase est vide mais qu'on a des données locales, les insérer
+          if (previousStateRef.current.length > 0) {
+            const { error: insertError } = await supabase!
+              .from(tableName)
+              .insert(previousStateRef.current as any);
+            if (insertError) {
+              console.error(`Erreur lors de l'insertion initiale dans ${tableName}:`, insertError);
+            } else {
+              console.log(`✅ ${previousStateRef.current.length} élément(s) inséré(s) dans ${tableName}`);
+            }
+          }
         }
       } catch (err) {
         console.error(`Erreur Supabase pour ${tableName}:`, err);
@@ -61,13 +75,12 @@ export const useSupabaseSync = <T extends { id: string | number }>(
   useEffect(() => {
     try {
       window.localStorage.setItem(key, JSON.stringify(state));
+      previousStateRef.current = state;
       
       // Synchroniser avec Supabase en arrière-plan si disponible
-      if (isSupabaseConfigured && tableName) {
-        syncWithSupabase(tableName, state, previousStateRef.current);
+      if (isSupabaseConfigured && tableName && isLoadedFromSupabase.current) {
+        syncAllToSupabase(tableName, state);
       }
-      
-      previousStateRef.current = state;
     } catch (error) {
       console.error('Erreur localStorage:', error);
     }
@@ -77,67 +90,23 @@ export const useSupabaseSync = <T extends { id: string | number }>(
 };
 
 /**
- * Synchronise les changements d'état avec Supabase
- * Détecte les ajouts, suppressions et modifications
+ * Envoie TOUT l'état actuel à Supabase en faisant un upsert
+ * Plus fiable que la détection de différences
  */
-const syncWithSupabase = async <T extends { id: string | number }>(
+const syncAllToSupabase = async <T extends { id: string | number }>(
   tableName: string,
-  newState: T[],
-  prevState: T[]
+  data: T[]
 ) => {
-  if (!supabase) return;
+  if (!supabase || data.length === 0) return;
 
-  const newIds = new Set(newState.map(item => item.id));
-  const prevIds = new Set(prevState.map(item => item.id));
+  // Upsert : met à jour ou insère chaque élément
+  const { error } = await supabase
+    .from(tableName)
+    .upsert(data as any, { onConflict: 'id' });
 
-  // Déterminer les changements
-  const added = newState.filter(item => !prevIds.has(item.id));
-  const deleted = prevState.filter(item => !newIds.has(item.id));
-  const updated = newState.filter(item => 
-    prevIds.has(item.id) && 
-    JSON.stringify(item) !== JSON.stringify(prevState.find(p => p.id === item.id))
-  );
-
-  // Insérer les nouveaux éléments
-  if (added.length > 0) {
-    const { error } = await supabase
-      .from(tableName)
-      .insert(added as any);
-    
-    if (error) {
-      console.error(`Erreur lors de l'insertion dans ${tableName}:`, error);
-    } else {
-      console.log(`✅ ${added.length} élément(s) ajouté(s) à ${tableName}`);
-    }
-  }
-
-  // Supprimer les éléments supprimés
-  if (deleted.length > 0) {
-    const deletedIds = deleted.map(item => item.id);
-    const { error } = await supabase
-      .from(tableName)
-      .delete()
-      .in('id', deletedIds as any);
-    
-    if (error) {
-      console.error(`Erreur lors de la suppression dans ${tableName}:`, error);
-    } else {
-      console.log(`✅ ${deleted.length} élément(s) supprimé(s) de ${tableName}`);
-    }
-  }
-
-  // Mettre à jour les éléments modifiés
-  if (updated.length > 0) {
-    for (const item of updated) {
-      const { error } = await supabase
-        .from(tableName)
-        .update(item as any)
-        .eq('id', item.id);
-      
-      if (error) {
-        console.error(`Erreur lors de la mise à jour de ${tableName} (id: ${item.id}):`, error);
-      } 
-    }
-    console.log(`✅ ${updated.length} élément(s) mis à jour dans ${tableName}`);
+  if (error) {
+    console.error(`Erreur lors de la synchronisation de ${tableName}:`, error);
+  } else {
+    console.log(`✅ ${tableName} synchronisé (${data.length} élément(s))`);
   }
 };
