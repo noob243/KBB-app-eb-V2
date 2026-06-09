@@ -335,14 +335,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_clients_updated    BEFORE UPDATE ON clients      FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-CREATE TRIGGER trg_avocats_updated    BEFORE UPDATE ON avocats      FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-CREATE TRIGGER trg_cases_updated      BEFORE UPDATE ON cases        FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-CREATE TRIGGER trg_tasks_updated      BEFORE UPDATE ON tasks        FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-CREATE TRIGGER trg_events_updated     BEFORE UPDATE ON events       FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-CREATE TRIGGER trg_invoices_updated   BEFORE UPDATE ON invoices     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-CREATE TRIGGER trg_personnels_updated BEFORE UPDATE ON personnels   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-CREATE TRIGGER trg_fournisseurs_updated BEFORE UPDATE ON fournisseurs FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+DROP TRIGGER IF EXISTS trg_clients_updated     ON clients;
+DROP TRIGGER IF EXISTS trg_avocats_updated     ON avocats;
+DROP TRIGGER IF EXISTS trg_cases_updated       ON cases;
+DROP TRIGGER IF EXISTS trg_tasks_updated       ON tasks;
+DROP TRIGGER IF EXISTS trg_events_updated      ON events;
+DROP TRIGGER IF EXISTS trg_invoices_updated    ON invoices;
+DROP TRIGGER IF EXISTS trg_personnels_updated  ON personnels;
+DROP TRIGGER IF EXISTS trg_fournisseurs_updated ON fournisseurs;
+
+CREATE TRIGGER trg_clients_updated      BEFORE UPDATE ON clients       FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_avocats_updated      BEFORE UPDATE ON avocats       FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_cases_updated        BEFORE UPDATE ON cases         FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_tasks_updated        BEFORE UPDATE ON tasks         FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_events_updated       BEFORE UPDATE ON events        FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_invoices_updated     BEFORE UPDATE ON invoices      FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_personnels_updated   BEFORE UPDATE ON personnels    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_fournisseurs_updated BEFORE UPDATE ON fournisseurs  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- ============================================================
 -- 14. ROW LEVEL SECURITY (prêt pour Supabase Auth)
@@ -359,12 +368,12 @@ ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 
 -- Politique par défaut : accès total pour les utilisateurs authentifiés
 -- À affiner selon les rôles (admin, avocat, secrétaire, etc.)
-CREATE POLICY "Authenticated full access" ON clients      FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Authenticated full access" ON avocats      FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Authenticated full access" ON cases        FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Authenticated full access" ON tasks        FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Authenticated full access" ON events       FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Authenticated full access" ON invoices     FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Authenticated full access" ON personnels   FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Authenticated full access" ON fournisseurs FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Authenticated full access" ON messages     FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Public full access" ON clients      FOR ALL USING (true);
+CREATE POLICY "Public full access" ON avocats      FOR ALL USING (true);
+CREATE POLICY "Public full access" ON cases        FOR ALL USING (true);
+CREATE POLICY "Public full access" ON tasks        FOR ALL USING (true);
+CREATE POLICY "Public full access" ON events       FOR ALL USING (true);
+CREATE POLICY "Public full access" ON invoices     FOR ALL USING (true);
+CREATE POLICY "Public full access" ON personnels   FOR ALL USING (true);
+CREATE POLICY "Public full access" ON fournisseurs FOR ALL USING (true);
+CREATE POLICY "Public full access" ON messages     FOR ALL USING (true);
