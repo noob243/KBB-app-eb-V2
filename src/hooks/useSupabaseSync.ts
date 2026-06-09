@@ -1,12 +1,49 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 /**
+ * Convertit un objet camelCase en snake_case pour Supabase
+ */
+const toSnakeCase = (obj: any): any => {
+  if (obj === null || obj === undefined || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(toSnakeCase);
+
+  const result: any = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    result[snakeKey] = typeof value === 'object' && value !== null && !(value instanceof Date) && !(value instanceof File)
+      ? toSnakeCase(value)
+      : value;
+  }
+  return result;
+};
+
+/**
+ * Convertit un objet snake_case en camelCase pour le frontend
+ */
+const toCamelCase = (obj: any): any => {
+  if (obj === null || obj === undefined || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(toCamelCase);
+
+  const result: any = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    result[camelKey] = typeof value === 'object' && value !== null && !(value instanceof Date)
+      ? toCamelCase(value)
+      : value;
+  }
+  return result;
+};
+
+/**
  * Hook personnalisé pour synchroniser l'état avec Supabase
- * Sauvegarde automatiquement les données en base de données
+ * - Convertit automatiquement camelCase ↔ snake_case
+ * - Charge les données depuis Supabase au montage
+ * - Sauvegarde automatiquement les changements vers Supabase
+ * 
  * @param tableName - Nom de la table Supabase
  * @param key - Clé localStorage de secours
- * @param initialValue - Valeur initiale
+ * @param initialValue - Valeur initiale (mockData) - ignorée si Supabase répond
  * @returns [state, setState]
  */
 export const useSupabaseSync = <T extends { id: string | number }>(
@@ -16,97 +53,84 @@ export const useSupabaseSync = <T extends { id: string | number }>(
 ): [T[], (fn: (prev: T[]) => T[]) => void] => {
   const [state, setState] = useState<T[]>(() => {
     try {
-      const stored = window.localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : initialValue;
-    } catch {
-      return initialValue;
-    }
+      const stored = window.localStorage.getItem(`kbb_supabase_${key}`);
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return initialValue;
   });
 
-  const previousStateRef = useRef<T[]>(initialValue);
-  const isLoadedFromSupabase = useRef(false);
+  const isLoadedRef = useRef(false);
+  const initialValueRef = useRef(initialValue);
+  const keyRef = useRef(key);
 
-  // Au montage : charger depuis Supabase si disponible
+  // Au montage : charger depuis Supabase
   useEffect(() => {
-    const loadFromSupabase = async () => {
-      if (!isSupabaseConfigured || !tableName || isLoadedFromSupabase.current) {
-        return;
-      }
+    if (!isSupabaseConfigured || !tableName) return;
 
+    const loadFromSupabase = async () => {
       try {
         const { data, error } = await supabase!
           .from(tableName)
           .select('*');
 
         if (error) {
-          console.error(`Erreur lors du chargement de ${tableName}:`, error);
+          console.error(`⚠️ Supabase [${tableName}]:`, error.message);
           return;
         }
 
         if (data && data.length > 0) {
-          const loadedData = data as T[];
-          setState(loadedData);
-          previousStateRef.current = loadedData;
-          window.localStorage.setItem(key, JSON.stringify(loadedData));
-          isLoadedFromSupabase.current = true;
+          // Convertir snake_case (Supabase) → camelCase (frontend)
+          const camelData = toCamelCase(data) as T[];
+          setState(camelData);
+          window.localStorage.setItem(`kbb_supabase_${keyRef.current}`, JSON.stringify(camelData));
+          isLoadedRef.current = true;
+          console.log(`✅ ${tableName}: ${data.length} élément(s) chargé(s) depuis Supabase`);
         } else {
-          isLoadedFromSupabase.current = true;
-          // Si Supabase est vide mais qu'on a des données locales, les insérer
-          if (previousStateRef.current.length > 0) {
-            const { error: insertError } = await supabase!
+          // Supabase vide : insérer les données initiales
+          isLoadedRef.current = true;
+          const init = initialValueRef.current;
+          if (init.length > 0) {
+            const snakeInit = toSnakeCase(init);
+            const { error: insertErr } = await supabase!
               .from(tableName)
-              .insert(previousStateRef.current as any);
-            if (insertError) {
-              console.error(`Erreur lors de l'insertion initiale dans ${tableName}:`, insertError);
+              .insert(snakeInit);
+            if (insertErr) {
+              console.error(`⚠️ Insert initial [${tableName}]:`, insertErr.message);
             } else {
-              console.log(`✅ ${previousStateRef.current.length} élément(s) inséré(s) dans ${tableName}`);
+              console.log(`✅ Données initiales insérées dans ${tableName} (${init.length})`);
+              setState(init);
+              window.localStorage.setItem(`kbb_supabase_${keyRef.current}`, JSON.stringify(init));
             }
           }
         }
       } catch (err) {
-        console.error(`Erreur Supabase pour ${tableName}:`, err);
+        console.error(`⚠️ Réseau [${tableName}]:`, err);
       }
     };
 
     loadFromSupabase();
-  }, [tableName, key]);
+  }, [tableName]);
 
-  // Sauvegarder dans localStorage et synchroniser avec Supabase
+  // Sauvegarder vers localStorage + Supabase à chaque changement
   useEffect(() => {
     try {
-      window.localStorage.setItem(key, JSON.stringify(state));
-      previousStateRef.current = state;
-      
-      // Synchroniser avec Supabase en arrière-plan si disponible
-      if (isSupabaseConfigured && tableName && isLoadedFromSupabase.current) {
-        syncAllToSupabase(tableName, state);
-      }
-    } catch (error) {
-      console.error('Erreur localStorage:', error);
+      window.localStorage.setItem(`kbb_supabase_${keyRef.current}`, JSON.stringify(state));
+    } catch {}
+
+    if (isSupabaseConfigured && tableName && isLoadedRef.current && state.length > 0) {
+      const sync = async () => {
+        const snakeData = toSnakeCase(state);
+        const { error } = await supabase!
+          .from(tableName)
+          .upsert(snakeData, { onConflict: 'id' });
+
+        if (error) {
+          console.error(`⚠️ Sync [${tableName}]:`, error.message);
+        }
+      };
+      sync();
     }
-  }, [state, key, tableName]);
+  }, [state, tableName]);
 
   return [state, setState];
-};
-
-/**
- * Envoie TOUT l'état actuel à Supabase en faisant un upsert
- * Plus fiable que la détection de différences
- */
-const syncAllToSupabase = async <T extends { id: string | number }>(
-  tableName: string,
-  data: T[]
-) => {
-  if (!supabase || data.length === 0) return;
-
-  // Upsert : met à jour ou insère chaque élément
-  const { error } = await supabase
-    .from(tableName)
-    .upsert(data as any, { onConflict: 'id' });
-
-  if (error) {
-    console.error(`Erreur lors de la synchronisation de ${tableName}:`, error);
-  } else {
-    console.log(`✅ ${tableName} synchronisé (${data.length} élément(s))`);
-  }
 };

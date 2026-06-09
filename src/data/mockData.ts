@@ -1,18 +1,17 @@
-
 import { Client, Case, Event, Avocat, Task, Invoice, Personnel, Fournisseur } from '../types';
 
 export const initialClients: Client[] = [
-  { id: 1, name: 'Congo Invest SARL', contact: 'Alain Mabiala', cases: 2 },
-  { id: 2, name: 'Kinshasa Digital Solutions', contact: 'Pascaline Bongo', cases: 1 },
-  { id: 3, name: 'Bâtir Congo Construction', contact: 'Christine Okito', cases: 5 },
-  { id: 4, name: 'Saveurs du Fleuve', contact: 'Chantal Biya', cases: 0 },
+  { id: 'CLT-001', name: 'Congo Invest SARL', contact: 'Alain Mabiala', email: 'alain@congoinvest.cd', phone: '+243811000001', secteur: 'Investissements & Services Financiers', siege: 'Bvd du 30 Juin, Gombe, Kinshasa', dirigeant: 'Alain Mabiala', typeFacturation: 'Forfaitaire', cases: 2 },
+  { id: 'CLT-002', name: 'Kinshasa Digital Solutions', contact: 'Pascaline Bongo', email: 'pascaline@kds.cd', phone: '+243811000002', secteur: 'Infrastructures Numériques & Logiciels', siege: 'Av. de la Gombe 45, Kinshasa', dirigeant: 'Pascaline Bongo', typeFacturation: 'Taux horaire', cases: 1 },
+  { id: 'CLT-003', name: 'Bâtir Congo Construction', contact: 'Christine Okito', email: 'c.okito@batircongo.cd', phone: '+243811000003', secteur: 'Bâtiment & Travaux Publics (BTP)', siege: 'Zone Industrielle, Kinshasa', dirigeant: 'Christine Okito', typeFacturation: 'Abonnement mensuel', cases: 5 },
+  { id: 'CLT-004', name: 'Saveurs du Fleuve', contact: 'Chantal Biya', email: 'chantal@saveursdufleuve.cd', phone: '+243811000004', secteur: 'Restauration & Agro-alimentaire', siege: 'Av. du Fleuve 12, Kinshasa', dirigeant: 'Chantal Biya', typeFacturation: 'Au dossier (Ponctuelle)', cases: 0 },
 ];
 
 export const initialCases: Case[] = [
-  { id: 'CI-2023-001', name: 'Litige commercial', client: 'Congo Invest SARL', status: 'En cours', nextHearing: '2024-09-15', notes: 'Dossier complexe concernant un désaccord de facturation de prestations avec un sous-traitant. En attente de pièces comptables complémentaires.' },
-  { id: 'KDS-2023-012', name: 'Dépôt de brevet', client: 'Kinshasa Digital Solutions', status: 'En attente', nextHearing: null, notes: 'Dépôt de marque et brevet technologique en cours d\'examen auprès de l\'ANAPI.' },
-  { id: 'BCC-2022-050', name: 'Contentieux immobilier', client: 'Bâtir Congo Construction', status: 'Clôturé', nextHearing: null, notes: 'Litige foncier résolu par ordonnance de référé favorable. Frais de justice entièrement recouvrés.' },
-  { id: 'CI-2023-002', name: 'Recouvrement de créances', client: 'Congo Invest SARL', status: 'En cours', nextHearing: '2024-10-02', notes: 'Mise en demeure infructueuse. Procédure d\'injonction de payer lancée.' },
+  { id: 'CI-2023-001', reference: 'CI-2023-001', clientId: 'CLT-001', name: 'Litige commercial', client: 'Congo Invest SARL', status: 'En cours', nextHearing: '2024-09-15', notes: 'Dossier complexe concernant un désaccord de facturation de prestations avec un sous-traitant.' },
+  { id: 'KDS-2023-012', reference: 'KDS-2023-012', clientId: 'CLT-002', name: 'Dépôt de brevet', client: 'Kinshasa Digital Solutions', status: 'En attente', nextHearing: null, notes: 'Dépôt de marque et brevet technologique en cours d\'examen auprès de l\'ANAPI.' },
+  { id: 'BCC-2022-050', reference: 'BCC-2022-050', clientId: 'CLT-003', name: 'Contentieux immobilier', client: 'Bâtir Congo Construction', status: 'Clôturé', nextHearing: null, notes: 'Litige foncier résolu par ordonnance de référé favorable.' },
+  { id: 'CI-2023-002', reference: 'CI-2023-002', clientId: 'CLT-001', name: 'Recouvrement de créances', client: 'Congo Invest SARL', status: 'En cours', nextHearing: '2024-10-02', notes: 'Mise en demeure infructueuse. Procédure d\'injonction de payer lancée.' },
 ];
 
 export const initialEvents: Event[] = [
@@ -23,16 +22,15 @@ export const initialEvents: Event[] = [
 ];
 
 export const initialAvocats: Avocat[] = [
-    { id: 'JLT-01', fullName: 'Jean-Luc Tshisekedi', photo: null, firstOathDate: '2010-01-15', secondOathDate: '', onaNumber: 'ONA-12345', cabinetStatus: 'Associé', serviceStartDate: '2012-09-01', serviceStatus: 'Actif', cabinetRole: 'Avocat Associé', phone: '0812345678', emails: ['jl.tshisekedi@cabinet.com'], disciplinaryMeasures: 'Aucune mesure à signaler.', mainBar: 'Kinshasa-Gombe', secondaryBar: 'Hauts-Plateaux' },
-    { id: 'MCM-02', fullName: 'Marie-Claire Mobutu', photo: null, firstOathDate: '2018-05-20', secondOathDate: '', onaNumber: 'ONA-67890', cabinetStatus: 'Senior', serviceStartDate: '2020-01-10', serviceStatus: 'Actif', cabinetRole: 'Avocate Collaboratrice', phone: '0887654321', emails: ['mc.mobutu@cabinet.com'], disciplinaryMeasures: '', mainBar: 'Haut Katanga', secondaryBar: '' },
-    { id: 'PL-03', fullName: 'Patrick Lumumba', photo: null, firstOathDate: '2022-07-01', secondOathDate: '', onaNumber: 'ONA-11223', cabinetStatus: 'Junior', serviceStartDate: '2023-09-01', serviceStatus: 'Actif', cabinetRole: 'Avocat Stagiaire', phone: '0811223344', emails: ['p.lumumba@cabinet.com'], disciplinaryMeasures: '', mainBar: 'Kinshasa-Matete', secondaryBar: 'Kongo Central' },
+    { id: 'JLT-01', fullName: 'Jean-Luc Tshisekedi', photo: null, firstOathDate: '2010-01-15', secondOathDate: '', onaNumber: 'ONA-12345', cabinetStatus: 'Associé', serviceStartDate: '2012-09-01', serviceStatus: 'Actif', cabinetRole: 'Avocat Associé', phone: '0812345678', emails: ['jl.tshisekedi@cabinet.com'], disciplinaryMeasures: 'Aucune mesure à signaler.', mainBar: 'Kinshasa-Gombe', secondaryBar: 'Hauts-Plateaux', maritalStatus: 'Marié(e)', hasChildren: true, childrenCount: 2, physicalAddress: 'Av. de la Gombe, Kinshasa' },
+    { id: 'MCM-02', fullName: 'Marie-Claire Mobutu', photo: null, firstOathDate: '2018-05-20', secondOathDate: '', onaNumber: 'ONA-67890', cabinetStatus: 'Senior', serviceStartDate: '2020-01-10', serviceStatus: 'Actif', cabinetRole: 'Avocate Collaboratrice', phone: '0887654321', emails: ['mc.mobutu@cabinet.com'], disciplinaryMeasures: '', mainBar: 'Haut Katanga', secondaryBar: '', maritalStatus: 'Célibataire', hasChildren: false, childrenCount: 0 },
+    { id: 'PL-03', fullName: 'Patrick Lumumba', photo: null, firstOathDate: '2022-07-01', secondOathDate: '', onaNumber: 'ONA-11223', cabinetStatus: 'Junior', serviceStartDate: '2023-09-01', serviceStatus: 'Actif', cabinetRole: 'Avocat Stagiaire', phone: '0811223344', emails: ['p.lumumba@cabinet.com'], disciplinaryMeasures: '', mainBar: 'Kinshasa-Matete', secondaryBar: 'Kongo Central', maritalStatus: 'Célibataire', hasChildren: false, childrenCount: 0 },
 ];
 
-
 export const initialTasks: Task[] = [
-  { id: 1, name: 'Rédiger conclusions pour Congo Invest', caseId: 'CI-2023-001', lawyer: 'Jean-Luc Tshisekedi', dueDate: '2024-09-25', status: 'Non effectué' },
-  { id: 2, name: 'Préparer audience Kinshasa Digital', caseId: 'KDS-2023-012', lawyer: 'Marie-Claire Mobutu', dueDate: '2024-10-10', status: 'Effectué à moitié' },
-  { id: 3, name: 'Rechercher jurisprudence Bâtir Congo', caseId: 'BCC-2022-050', lawyer: 'Patrick Lumumba', dueDate: '2024-09-30', status: 'Effectué' },
+  { id: 'TASK-001', name: 'Rédiger conclusions pour Congo Invest', caseId: 'CI-2023-001', lawyer: 'Jean-Luc Tshisekedi', dueDate: '2024-09-25', status: 'Non effectué' },
+  { id: 'TASK-002', name: 'Préparer audience Kinshasa Digital', caseId: 'KDS-2023-012', lawyer: 'Marie-Claire Mobutu', dueDate: '2024-10-10', status: 'Effectué à moitié' },
+  { id: 'TASK-003', name: 'Rechercher jurisprudence Bâtir Congo', caseId: 'BCC-2022-050', lawyer: 'Patrick Lumumba', dueDate: '2024-09-30', status: 'Effectué' },
 ];
 
 export const mockPersonnel = [
@@ -54,9 +52,9 @@ export const initialConversations: { [key: string]: { sender: string; text: stri
 };
 
 export const initialInvoices: Invoice[] = [
-    { id: 'FACT-CI001-01', caseId: 'CI-2023-001', dueDate: '2024-09-30', totalAmount: 2500, paidAmount: 2500, status: 'Réglée' },
-    { id: 'FACT-KDS012-01', caseId: 'KDS-2023-012', dueDate: '2024-10-15', totalAmount: 5000, paidAmount: 1000, status: 'En cours' },
-    { id: 'FACT-CI002-01', caseId: 'CI-2023-002', dueDate: '2024-10-20', totalAmount: 1200, paidAmount: 0, status: 'Non réglée' },
+    { id: 'FACT-CI001-01', reference: 'FACT-CI001-01', caseId: 'CI-2023-001', dueDate: '2024-09-30', totalAmount: 2500, paidAmount: 2500, status: 'Réglée' },
+    { id: 'FACT-KDS012-01', reference: 'FACT-KDS012-01', caseId: 'KDS-2023-012', dueDate: '2024-10-15', totalAmount: 5000, paidAmount: 1000, status: 'En cours' },
+    { id: 'FACT-CI002-01', reference: 'FACT-CI002-01', caseId: 'CI-2023-002', dueDate: '2024-10-20', totalAmount: 1200, paidAmount: 0, status: 'Non réglée' },
 ];
 
 export const initialPersonnels: Personnel[] = [
@@ -70,7 +68,7 @@ export const initialPersonnels: Personnel[] = [
         serviceStatus: 'Actif',
         salary: 850,
         maritalStatus: 'Marié(e)',
-        hasChildren: 'Oui',
+        hasChildren: true,
         childrenCount: 2,
         address: 'Av. de la Gombe 12, Kinshasa/Gombe',
         photo: '',
@@ -87,7 +85,7 @@ export const initialPersonnels: Personnel[] = [
         serviceStatus: 'Actif',
         salary: 1200,
         maritalStatus: 'Célibataire',
-        hasChildren: 'Non',
+        hasChildren: false,
         childrenCount: 0,
         address: 'Bld du 30 Juin 45, Kinshasa/Gombe',
         photo: '',
@@ -104,7 +102,7 @@ export const initialPersonnels: Personnel[] = [
         serviceStatus: 'Actif',
         salary: 600,
         maritalStatus: 'Célibataire',
-        hasChildren: 'Non',
+        hasChildren: false,
         childrenCount: 0,
         address: 'Av. Kisangani 104, Kinshasa/Lingwala',
         photo: '',
@@ -160,5 +158,3 @@ export const initialFournisseurs: Fournisseur[] = [
         ]
     }
 ];
-
-
