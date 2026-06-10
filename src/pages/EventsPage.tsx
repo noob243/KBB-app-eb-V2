@@ -167,7 +167,7 @@ const EventsPage: FC<EventsPageProps> = ({ events, onAddEvent, onUpdateEvent, av
                 extraHeaderActions={
                     <button 
                         onClick={() => setIsAllReportsModalOpen(true)} 
-                        className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-xl transition duration-150 shadow-sm flex items-center text-xs sm:text-sm"
+                        className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-3 sm:px-4 rounded-xl transition duration-150 shadow-sm flex items-center text-xs sm:text-sm"
                     >
                         <span className="mr-2">📋</span>
                         voir tous les rapports ({totalReportsCount})
@@ -235,8 +235,8 @@ const EventsPage: FC<EventsPageProps> = ({ events, onAddEvent, onUpdateEvent, av
 
             {/* Event Details Model */}
             {selectedEvent && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-xl w-full animate-fadeIn flex flex-col max-h-[90vh]">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-3 sm:p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 max-w-xl w-full animate-fadeIn flex flex-col max-h-[95vh] sm:max-h-[90vh]">
                         <div className="flex justify-between items-start mb-4 border-b border-gray-100 pb-3 shrink-0">
                             <div>
                                 <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mb-1.5 ${
@@ -314,11 +314,6 @@ const EventsPage: FC<EventsPageProps> = ({ events, onAddEvent, onUpdateEvent, av
                                                 </div>
                                             ))}
                                         </div>
-                                    </div>
-                                ) : selectedEvent.financement ? (
-                                    <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl col-span-2">
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Financement</span>
-                                        <p className="text-xs font-bold text-gray-700">{selectedEvent.financement}</p>
                                     </div>
                                 ) : null}
                             </div>
@@ -403,8 +398,8 @@ const EventsPage: FC<EventsPageProps> = ({ events, onAddEvent, onUpdateEvent, av
 
             {/* Event Report Form Modal */}
             {reportingEvent && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-lg w-full animate-fadeIn max-h-[92vh] flex flex-col">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-3 sm:p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 max-w-lg w-full animate-fadeIn max-h-[92vh] flex flex-col">
                         <div className="flex justify-between items-start mb-4 border-b border-gray-150 pb-3 shrink-0">
                             <div>
                                 <h3 className="text-base font-black text-[#15447c] uppercase tracking-wider flex items-center gap-1">
@@ -561,8 +556,8 @@ const EventsPage: FC<EventsPageProps> = ({ events, onAddEvent, onUpdateEvent, av
 
             {/* View All Reports Modal */}
             {viewingReportsEvent && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-2xl w-full animate-fadeIn flex flex-col max-h-[90vh]">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-3 sm:p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 max-w-2xl w-full animate-fadeIn flex flex-col max-h-[90vh]">
                         <div className="flex justify-between items-start mb-4 border-b border-gray-150 pb-3 shrink-0">
                             <div>
                                 <h3 className="text-base font-black text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -686,8 +681,8 @@ const EventsPage: FC<EventsPageProps> = ({ events, onAddEvent, onUpdateEvent, av
 
             {/* View ALL Reports Modal (Global) */}
             {isAllReportsModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-3xl w-full animate-fadeIn flex flex-col max-h-[90vh]">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-3 sm:p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 max-w-3xl w-full animate-fadeIn flex flex-col max-h-[90vh]">
                         <div className="flex justify-between items-start mb-4 border-b border-gray-150 pb-3 shrink-0">
                             <div>
                                 <h3 className="text-base font-black text-amber-800 uppercase tracking-wider flex items-center gap-1.5">

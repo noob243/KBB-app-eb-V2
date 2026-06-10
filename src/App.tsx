@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { usePersistentState } from './hooks/usePersistentState';
 import { useSupabaseSync } from './hooks/useSupabaseSync';
@@ -6,6 +5,7 @@ import { initialClients, initialCases, initialEvents, initialTasks, initialInvoi
 
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import MobileNav from './components/MobileNav';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ClientsPage from './pages/ClientsPage';
@@ -28,6 +28,7 @@ function App() {
     const [isAuthenticated, setIsAuthenticated] = usePersistentState('kbb_auth', false);
     const [currentPage, setCurrentPage] = useState('Dashboard');
     const [searchQuery, setSearchQuery] = useState('');
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     
     // Utiliser useSupabaseSync pour synchroniser les données avec Supabase
     const [clients, setClients] = useSupabaseSync<Client>('clients', 'kbb_clients', initialClients);
@@ -48,6 +49,7 @@ function App() {
     const handleLogout = () => {
         setIsAuthenticated(false);
         setCurrentPage('Dashboard');
+        setMobileMenuOpen(false);
     };
     
     // --- PDF Export Logic ---
@@ -138,35 +140,58 @@ function App() {
         e.lieu.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const handleNavigate = (page: string) => {
+        setCurrentPage(page);
+        setMobileMenuOpen(false);
+    };
+
     const renderPage = () => {
         const pageProps = {
             clients: filteredClients, 
             cases: filteredCases, 
             events: filteredEvents, 
             tasks, invoices, avocats, lawyerNames, personnels, fournisseurs,
-            onAddClient: handleAddClient, onAddCase: handleAddCase, onAddEvent: handleAddEvent,
-            onAddTask: handleAddTask, onAddInvoice: handleAddInvoice, onAddAvocat: handleAddAvocat, onAddPersonnel: handleAddPersonnel, onAddFournisseur: handleAddFournisseur,
-            onDeleteClient: handleDeleteClient, onDeleteCase: handleDeleteCase, onDeleteAvocat: handleDeleteAvocat, onDeletePersonnel: handleDeletePersonnel, onDeleteFournisseur: handleDeleteFournisseur,
-            onDeleteEvent: handleDeleteEvent, onDeleteTask: handleDeleteTask, onDeleteInvoice: handleDeleteInvoice,
-            onExportClients: handleExportClients, onExportCases: handleExportCases,
-            onUpdateClient: handleUpdateClient, onUpdateCase: handleUpdateCase, onUpdateAvocat: handleUpdateAvocat, onUpdatePersonnel: handleUpdatePersonnel,
+            onAddClient: handleAddClient,
+            onAddCase: handleAddCase,
+            onAddEvent: handleAddEvent,
+            onUpdateEvent: handleUpdateEvent,
+            onDeleteEvent: handleDeleteEvent,
+            onAddTask: handleAddTask,
+            onUpdateTaskStatus: handleUpdateTaskStatus,
+            onDeleteTask: handleDeleteTask,
+            onAddInvoice: handleAddInvoice,
+            onDeleteInvoice: handleDeleteInvoice,
+            onAddAvocat: handleAddAvocat,
+            onDeleteAvocat: handleDeleteAvocat,
+            onAddPersonnel: handleAddPersonnel,
+            onDeletePersonnel: handleDeletePersonnel,
+            onAddFournisseur: handleAddFournisseur,
+            onDeleteFournisseur: handleDeleteFournisseur,
+            onDeleteClient: handleDeleteClient,
+            onUpdateClient: handleUpdateClient,
+            onDeleteCase: handleDeleteCase,
+            onUpdateCase: handleUpdateCase,
+            onUpdateAvocat: handleUpdateAvocat,
+            onUpdatePersonnel: handleUpdatePersonnel,
+            onExportClients: handleExportClients,
+            onExportCases: handleExportCases,
         };
 
         switch (currentPage) {
-            case 'Dashboard': return <DashboardPage clients={filteredClients} cases={filteredCases} events={filteredEvents} tasks={tasks} invoices={invoices} avocats={avocats} onUpdateTaskStatus={handleUpdateTaskStatus} onAddTask={handleAddTask} />;
-            case 'AIAssistant': return <AIAssistantPage clients={filteredClients} cases={filteredCases} tasks={tasks} invoices={invoices} />;
-            case 'Clients': return <ClientsPage clients={filteredClients} cases={cases} onAddClient={handleAddClient} onExport={handleExportClients} />;
-            case 'Dossiers': return <CasesPage cases={filteredCases} clients={filteredClients} tasks={tasks} onAddCase={handleAddCase} onExport={handleExportCases} avocats={avocats} />;
-            case 'Evenements': return <EventsPage events={filteredEvents} onAddEvent={handleAddEvent} onUpdateEvent={handleUpdateEvent} avocats={avocats} />;
-            case 'Agenda': return <AgendaPage tasks={tasks} cases={filteredCases} lawyers={lawyerNames} avocats={avocats} onAddTask={handleAddTask} />;
+            case 'Dashboard': return <DashboardPage {...pageProps} />;
+            case 'Clients': return <ClientsPage {...pageProps} />;
+            case 'Cases': return <CasesPage {...pageProps} onExport={pageProps.onExportCases} />;
+            case 'Events': return <EventsPage {...pageProps} />;
+            case 'Agenda': return <AgendaPage {...pageProps} />;
             case 'Chat': return <ChatPage />;
-            case 'Facturation': return <BillingPage invoices={invoices} cases={filteredCases} onAddInvoice={handleAddInvoice} />;
-            case 'Avocats': return <AvocatsPage avocats={avocats} tasks={tasks} onAddAvocat={handleAddAvocat} />;
-            case 'Personnels': return <PersonnelsPage personnels={personnels} onAddPersonnel={handleAddPersonnel} onDeletePersonnel={handleDeletePersonnel} />;
-            case 'Fournisseurs': return <FournisseursPage fournisseurs={fournisseurs} onAddFournisseur={handleAddFournisseur} onDeleteFournisseur={handleDeleteFournisseur} />;
+            case 'Billing': return <BillingPage {...pageProps} />;
+            case 'Avocats': return <AvocatsPage {...pageProps} />;
+            case 'Personnels': return <PersonnelsPage {...pageProps} />;
+            case 'Fournisseurs': return <FournisseursPage {...pageProps} />;
             case 'Gestion': return <GestionPage {...pageProps} />;
-            case 'All': return <AllInterfacesPage {...pageProps} />;
-            default: return <DashboardPage clients={filteredClients} cases={filteredCases} events={filteredEvents} tasks={tasks} invoices={invoices} avocats={avocats} onUpdateTaskStatus={handleUpdateTaskStatus} onAddTask={handleAddTask} />;
+            case 'AllInterfaces': return <AllInterfacesPage {...pageProps} />;
+            case 'AIAssistant': return <AIAssistantPage {...pageProps} />;
+            default: return <DashboardPage {...pageProps} />;
         }
     };
 
@@ -175,22 +200,30 @@ function App() {
     }
 
     return (
-        <div className="flex h-screen bg-gray-100 font-sans overflow-hidden">
-            <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                <Header 
-                    searchQuery={searchQuery} 
-                    setSearchQuery={setSearchQuery} 
-                    clients={clients} 
-                    cases={cases} 
-                    events={events} 
-                    setCurrentPage={setCurrentPage} 
-                />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto p-8 custom-scrollbar">
-                    {renderPage()}
-                </main>
+        <>
+            {/* Desktop Sidebar */}
+            <div className="hidden md:block fixed top-0 left-0 bottom-0 z-40">
+                <Sidebar currentPage={currentPage} setCurrentPage={handleNavigate} onLogout={handleLogout} />
             </div>
-        </div>
+
+            {/* Main Content */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }} className="md:ml-64">
+                <Header
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    clients={clients}
+                    cases={cases}
+                    events={events}
+                    setCurrentPage={handleNavigate}
+                />
+                <div style={{ flex: 1, overflow: 'auto', padding: '12px', paddingBottom: '80px', WebkitOverflowScrolling: 'touch' }}>
+                    {renderPage()}
+                </div>
+            </div>
+
+            {/* Mobile Navigation - fixed at bottom, outside overflow container */}
+            <MobileNav currentPage={currentPage} onNavigate={handleNavigate} />
+        </>
     );
 }
 

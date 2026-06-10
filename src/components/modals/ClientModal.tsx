@@ -52,12 +52,6 @@ const ClientModal: FC<ClientModalProps> = ({ isOpen, onClose, onSave }) => {
             siege: formData.siege,
             sieges: additionalSieges.filter(s => s.trim() !== ''),
             dirigeant: formData.dirigeant,
-            ref1_nom: formData.ref1_nom,
-            ref1_phone: formData.ref1_phone,
-            ref1_email: formData.ref1_email,
-            ref2_nom: formData.ref2_nom,
-            ref2_phone: formData.ref2_phone,
-            ref2_email: formData.ref2_email,
             typeFacturation: formData.typeFacturation,
         });
         setFormData(initialFormState);

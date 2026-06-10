@@ -50,7 +50,7 @@ export const useSupabaseSync = <T extends { id: string | number }>(
   tableName: string | null,
   key: string,
   initialValue: T[]
-): [T[], (fn: (prev: T[]) => T[]) => void] => {
+): [T[], React.Dispatch<React.SetStateAction<T[]>>] => {
   const [state, setState] = useState<T[]>(() => {
     try {
       const stored = window.localStorage.getItem(`kbb_supabase_${key}`);

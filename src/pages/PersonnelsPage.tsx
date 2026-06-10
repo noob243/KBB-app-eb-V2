@@ -196,8 +196,8 @@ const PersonnelsPage: FC<PersonnelsPageProps> = ({ personnels, onAddPersonnel, o
 
             {/* Personnel Profile Modal Details */}
             {selectedPersonnel && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-lg w-full animate-fadeIn flex flex-col max-h-[90vh] overflow-y-auto">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-3 sm:p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 max-w-lg w-full animate-fadeIn flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-start mb-6 border-b border-gray-100 pb-4 shrink-0">
                             <div className="flex items-center gap-4">
                                 {selectedPersonnel.photo ? (

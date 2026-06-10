@@ -1,4 +1,3 @@
-
 import React, { FC, useState } from 'react';
 import PageContainer from '../components/PageContainer';
 import AvocatModal from '../components/modals/AvocatModal';
@@ -6,58 +5,117 @@ import { Avocat, Task } from '../types';
 
 interface AvocatsPageProps {
   avocats: Avocat[];
-  tasks?: Task[]; // Made optional for robust compiling
+  tasks?: Task[];
   onAddAvocat: (avocat: Avocat) => void;
+  onDeleteAvocat?: (id: string) => void;
 }
 
-const AvocatsPage: FC<AvocatsPageProps> = ({ avocats, tasks = [], onAddAvocat }) => {
+const AvocatsPage: FC<AvocatsPageProps> = ({ avocats, tasks = [], onAddAvocat, onDeleteAvocat }) => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [selectedAvocat, setSelectedAvocat] = useState<Avocat | null>(null);
     
     const getServiceStatusClass = (status: string) => {
         switch (status) {
-            case 'Actif': return 'bg-green-100 text-green-800';
+            case 'Actif': return 'bg-green-100 text-green-800 border-green-200';
             case 'Omi':
-            case 'Omis': return 'bg-yellow-101 text-yellow-810 bg-amber-50 text-amber-800 border-amber-200';
-            case 'Mise en disponibilité': return 'bg-blue-101 text-blue-800';
-            default: return 'bg-gray-101 text-gray-805';
+            case 'Omis': return 'bg-amber-50 text-amber-800 border-amber-200';
+            case 'Mise en disponibilité': return 'bg-blue-100 text-blue-800 border-blue-200';
+            default: return 'bg-gray-100 text-gray-800 border-gray-200';
         }
     };
 
     return (
         <>
             <PageContainer title="Avocats" buttonLabel="Ajouter un Avocat" onButtonClick={() => setIsAddModalOpen(true)}>
-                 <div className="overflow-x-auto">
+                {/* Mobile: cards */}
+                <div className="sm:hidden space-y-3">
+                    {avocats.map(avocat => (
+                        <div key={avocat.id} className="p-4 bg-white border border-gray-200 rounded-xl">
+                            <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-xs font-bold text-[#15447c] flex-shrink-0">
+                                            {avocat.fullName.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <h3 className="font-semibold text-gray-800 text-sm truncate">{avocat.fullName}</h3>
+                                            <p className="text-[11px] text-gray-500 truncate">{avocat.cabinetRole} · {avocat.cabinetStatus}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${getServiceStatusClass(avocat.serviceStatus)}`}>
+                                    {avocat.serviceStatus}
+                                </span>
+                            </div>
+                            <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-600">
+                                <span className="bg-gray-50 px-2 py-1 rounded">📧 {avocat.emails[0]}</span>
+                                <span className="bg-gray-50 px-2 py-1 rounded">📞 {avocat.phone}</span>
+                            </div>
+                            <div className="mt-3 flex gap-2">
+                                <button 
+                                    onClick={() => setSelectedAvocat(avocat)}
+                                    className="flex-1 text-indigo-600 font-bold text-xs bg-indigo-50 hover:bg-indigo-100 py-2 rounded-xl transition"
+                                >
+                                    Voir Profil
+                                </button>
+                                {onDeleteAvocat && (
+                                    <button 
+                                        onClick={() => onDeleteAvocat(avocat.id)}
+                                        className="px-3 text-red-500 font-bold text-xs bg-red-50 hover:bg-red-100 py-2 rounded-xl transition"
+                                    >
+                                        Suppr.
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                    {avocats.length === 0 && (
+                        <div className="p-8 text-center text-gray-400 bg-gray-50 rounded-xl border border-dashed">
+                            <p className="font-semibold">Aucun avocat enregistré</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Desktop: table */}
+                <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="bg-gray-50 border-b border-gray-200">
-                            <tr className="text-sm text-gray-600">
-                                <th className="p-4 font-semibold">Nom</th>
-                                <th className="p-4 font-semibold">Statut au cabinet</th>
-                                <th className="p-4 font-semibold">Statut de service</th>
-                                <th className="p-4 font-semibold">E-mail</th>
-                                <th className="p-4 font-semibold">Téléphone</th>
-                                <th className="p-4 font-semibold">Actions</th>
+                            <tr className="text-xs sm:text-sm text-gray-600">
+                                <th className="p-3 sm:p-4 font-semibold">Nom</th>
+                                <th className="p-3 sm:p-4 font-semibold">Statut Cabinet</th>
+                                <th className="p-3 sm:p-4 font-semibold">Service</th>
+                                <th className="p-3 sm:p-4 font-semibold">E-mail</th>
+                                <th className="p-3 sm:p-4 font-semibold">Téléphone</th>
+                                <th className="p-3 sm:p-4 font-semibold">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {avocats.map(avocat => (
                                 <tr key={avocat.id} className="border-b border-gray-200 hover:bg-gray-50">
-                                    <td className="p-4 font-medium text-gray-800">{avocat.fullName}</td>
-                                    <td className="p-4 text-gray-600">{avocat.cabinetStatus}</td>
-                                    <td className="p-4">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getServiceStatusClass(avocat.serviceStatus)}`}>
+                                    <td className="p-3 sm:p-4 font-medium text-gray-800 text-sm">{avocat.fullName}</td>
+                                    <td className="p-3 sm:p-4 text-gray-600 text-sm">{avocat.cabinetStatus}</td>
+                                    <td className="p-3 sm:p-4">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${getServiceStatusClass(avocat.serviceStatus)}`}>
                                             {avocat.serviceStatus}
                                         </span>
                                     </td>
-                                    <td className="p-4 text-gray-600">{avocat.emails[0]}</td>
-                                    <td className="p-4 text-gray-600">{avocat.phone}</td>
-                                    <td className="p-4">
+                                    <td className="p-3 sm:p-4 text-gray-600 text-sm truncate max-w-[150px]">{avocat.emails[0]}</td>
+                                    <td className="p-3 sm:p-4 text-gray-600 text-sm">{avocat.phone}</td>
+                                    <td className="p-3 sm:p-4">
                                         <button 
                                             onClick={() => setSelectedAvocat(avocat)}
-                                            className="text-indigo-600 hover:text-indigo-850 hover:underline font-bold text-sm bg-indigo-50 hover:bg-indigo-100/60 px-3 py-1.5 rounded-xl transition duration-150"
+                                            className="text-indigo-600 font-bold text-xs bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-xl transition"
                                         >
                                             Voir
                                         </button>
+                                        {onDeleteAvocat && (
+                                            <button 
+                                                onClick={() => onDeleteAvocat(avocat.id)}
+                                                className="ml-2 text-red-500 font-bold text-xs bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-xl transition"
+                                            >
+                                                Suppr.
+                                            </button>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
@@ -70,138 +128,85 @@ const AvocatsPage: FC<AvocatsPageProps> = ({ avocats, tasks = [], onAddAvocat })
 
             {/* Avocat details modal */}
             {selectedAvocat && (() => {
-                const lawyerTasks = tasks.filter(t => t.lawyer.toLowerCase() === selectedAvocat.fullName.toLowerCase());
+                const lawyerTasks = tasks.filter(t => t.lawyer && t.lawyer.toLowerCase() === selectedAvocat.fullName.toLowerCase());
                 
                 return (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-4">
-                        <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-fadeIn">
-                            {/* Header */}
-                            <div className="flex justify-between items-start mb-6 border-b border-gray-100 pb-4">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-14 h-14 bg-indigo-100 rounded-full flex items-center justify-center text-xl font-extrabold text-[#15447c] shadow-inner">
-                                        {selectedAvocat.fullName.split(' ').map(n => n[0]).join('')}
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-3 sm:p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto animate-fadeIn">
+                            <div className="flex justify-between items-start mb-4 sm:mb-6 border-b border-gray-100 pb-3 sm:pb-4">
+                                <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1 pr-2">
+                                    <div className="w-10 h-10 sm:w-14 sm:h-14 bg-indigo-100 rounded-full flex items-center justify-center text-base sm:text-xl font-extrabold text-[#15447c] flex-shrink-0">
+                                        {selectedAvocat.fullName.split(' ').map(n => n[0]).join('').substring(0, 2)}
                                     </div>
-                                    <div>
-                                        <span className="text-2xs font-bold text-indigo-600 uppercase tracking-wider block mb-0.5">{selectedAvocat.cabinetRole} ({selectedAvocat.cabinetStatus})</span>
-                                        <h2 className="text-2xl font-extrabold text-gray-850 leading-tight">{selectedAvocat.fullName}</h2>
-                                        <p className="text-2xs font-mono text-gray-400 mt-1">Numéro ONA : <strong className="font-semibold text-gray-600">{selectedAvocat.onaNumber || 'N/A'}</strong></p>
+                                    <div className="min-w-0">
+                                        <span className="text-2xs font-bold text-indigo-600 uppercase tracking-wider block mb-0.5 truncate">{selectedAvocat.cabinetRole} ({selectedAvocat.cabinetStatus})</span>
+                                        <h2 className="text-base sm:text-2xl font-extrabold text-gray-850 truncate">{selectedAvocat.fullName}</h2>
+                                        <p className="text-2xs font-mono text-gray-400 mt-1">ONA : <strong>{selectedAvocat.onaNumber || 'N/A'}</strong></p>
                                     </div>
                                 </div>
-                                <button 
-                                    onClick={() => setSelectedAvocat(null)} 
-                                    className="p-1.5 hover:bg-slate-100 rounded-xl text-gray-400 hover:text-gray-600 transition"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <button onClick={() => setSelectedAvocat(null)} className="p-1 hover:bg-slate-100 rounded-xl text-gray-400 hover:text-gray-600 transition flex-shrink-0">
+                                    <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                                     </svg>
                                 </button>
                             </div>
 
-                            {/* Main Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                <div className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
+                                <div className="space-y-3 sm:space-y-4 text-xs sm:text-sm">
                                     <div>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Contact Direct</span>
-                                        <p className="text-xs text-gray-750 font-medium leading-relaxed">📞 {selectedAvocat.phone}</p>
-                                        <p className="text-xs text-gray-750 font-medium leading-relaxed mt-1">✉️ {selectedAvocat.emails.join(', ')}</p>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Contact</span>
+                                        <p className="text-xs text-gray-700 font-medium">📞 {selectedAvocat.phone}</p>
+                                        <p className="text-xs text-gray-700 font-medium mt-1 break-all">✉️ {selectedAvocat.emails.join(', ')}</p>
                                     </div>
-
                                     <div>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Prestation de Serments</span>
-                                        <p className="text-xs text-gray-750 font-semibold leading-relaxed">📅 1er Serment : {selectedAvocat.firstOathDate || 'N/A'}</p>
-                                        {selectedAvocat.secondOathDate && (
-                                            <p className="text-xs text-gray-750 font-semibold leading-relaxed mt-1">📅 2nd Serment : {selectedAvocat.secondOathDate}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Barreaux</span>
-                                        <p className="text-xs text-slate-800 font-semibold leading-relaxed flex items-center gap-1">
-                                            <span>🏛️ Principal :</span>
-                                            <span className="bg-indigo-50 border border-indigo-100 text-indigo-800 font-bold px-1.5 py-0.5 rounded text-2xs">{selectedAvocat.mainBar || 'Non spécifié'}</span>
-                                        </p>
-                                        {selectedAvocat.secondaryBar ? (
-                                            <p className="text-xs text-slate-800 font-semibold leading-relaxed mt-1.5 flex items-center gap-1">
-                                                <span>🏛️ Secondaire :</span>
-                                                <span className="bg-slate-100 border border-slate-200 text-slate-705 font-bold px-1.5 py-0.5 rounded text-2xs">{selectedAvocat.secondaryBar}</span>
-                                            </p>
-                                        ) : (
-                                            <p className="text-2xs text-gray-400 italic mt-1 font-medium">Aucun barreau secondaire spécifié</p>
-                                        )}
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Serments</span>
+                                        <p className="text-xs text-gray-700">📅 1er : {selectedAvocat.firstOathDate || 'N/A'}</p>
+                                        {selectedAvocat.secondOathDate && <p className="text-xs text-gray-700 mt-1">📅 2nd : {selectedAvocat.secondOathDate}</p>}
                                     </div>
                                 </div>
-
-                                <div className="space-y-4">
+                                <div className="space-y-3 sm:space-y-4 text-xs sm:text-sm">
                                     <div>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Statut de Service</span>
-                                        <span className={`inline-block px-2.5 py-1 rounded-full text-2xs font-bold uppercase tracking-wider mt-1 ${getServiceStatusClass(selectedAvocat.serviceStatus)}`}>
-                                            {selectedAvocat.serviceStatus} (depuis le {selectedAvocat.serviceStartDate})
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Barreaux</span>
+                                        <p className="text-xs text-gray-700 font-semibold">🏛️ Principal : {selectedAvocat.mainBar || 'N/A'}</p>
+                                        {selectedAvocat.secondaryBar && <p className="text-xs text-gray-700 mt-1">🏛️ Secondaire : {selectedAvocat.secondaryBar}</p>}
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Service</span>
+                                        <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold border ${getServiceStatusClass(selectedAvocat.serviceStatus)}`}>
+                                            {selectedAvocat.serviceStatus} (depuis {selectedAvocat.serviceStartDate})
                                         </span>
-                                    </div>
-
-                                    <div>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Mesures Disciplinaires</span>
-                                        <p className="text-xs text-gray-650 italic leading-relaxed bg-slate-50 border border-slate-100 p-2.5 rounded-lg">
-                                            {selectedAvocat.disciplinaryMeasures || "Aucune mesure ou sanction disciplinaire n'est recensée au dossier."}
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Comptes Bancaires ({selectedAvocat.bankAccounts?.length || 0})</span>
-                                        {!selectedAvocat.bankAccounts || selectedAvocat.bankAccounts.length === 0 ? (
-                                            <p className="text-xs text-gray-400 italic leading-relaxed bg-slate-50 border border-dashed border-gray-250 p-2.5 rounded-lg">Aucun compte bancaire configuré.</p>
-                                        ) : (
-                                            <div className="space-y-1.5 pt-1">
-                                                {selectedAvocat.bankAccounts.map((acc, idx) => (
-                                                    <div key={idx} className="bg-indigo-50/45 border border-indigo-100 rounded-lg p-2 flex justify-between items-center text-xs font-semibold text-indigo-900 font-mono shadow-3xs">
-                                                        <span className="font-bold">🏦 {acc.bankName}</span>
-                                                        <span className="text-gray-600 select-all">{acc.accountNumber}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Target Task Log */}
-                            <div className="border-t border-gray-100 pt-5">
-                                <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest mb-3">
-                                    Tâches assignées ({lawyerTasks.length})
-                                </h3>
-
+                            <div className="border-t border-gray-100 pt-4 sm:pt-5">
+                                <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest mb-3">Tâches ({lawyerTasks.length})</h3>
                                 {lawyerTasks.length === 0 ? (
-                                    <div className="p-5 text-center bg-gray-50 border border-dashed border-gray-200 rounded-xl text-gray-400 text-xs">
-                                        Aucune tâche opérationnelle n'est affectée à cet avocat pour le moment.
+                                    <div className="p-4 sm:p-5 text-center bg-gray-50 border border-dashed border-gray-200 rounded-xl text-gray-400 text-xs">
+                                        Aucune tâche assignée.
                                     </div>
                                 ) : (
-                                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                    <div className="space-y-2 max-h-40 sm:max-h-48 overflow-y-auto pr-1">
                                         {lawyerTasks.map(t => (
-                                            <div key={t.id} className="p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between hover:bg-slate-100/50 transition duration-150">
-                                                <div>
-                                                    <span className="text-sm font-semibold text-gray-850 block leading-tight">{t.name}</span>
-                                                    <span className="text-[10px] text-gray-450 font-medium">📜 Dossier : {t.caseId} • Échéance : {t.dueDate}</span>
+                                            <div key={t.id} className="p-2.5 sm:p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between gap-2">
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-xs sm:text-sm font-semibold text-gray-800 truncate">{t.name}</p>
+                                                    <p className="text-[10px] text-gray-400">📜 {t.caseId} · {t.dueDate}</p>
                                                 </div>
-                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap flex-shrink-0 ${
                                                     t.status === 'Effectué' ? 'bg-green-50 text-green-700 border-green-100' : 
                                                     t.status === 'Effectué à moitié' ? 'bg-amber-50 text-amber-700 border-amber-100' :
                                                     'bg-rose-50 text-rose-700 border-rose-100'
-                                                }`}>
-                                                    {t.status}
-                                                </span>
+                                                }`}>{t.status}</span>
                                             </div>
                                         ))}
                                     </div>
                                 )}
                             </div>
 
-                            {/* Actions / Footer */}
-                            <div className="mt-8 pt-4 border-t border-gray-100 flex justify-end">
-                                <button 
-                                    onClick={() => setSelectedAvocat(null)} 
-                                    className="bg-slate-100 hover:bg-slate-200 text-gray-800 font-bold py-2 px-6 rounded-xl transition duration-150 text-sm"
-                                >
-                                    Fermer le profil
+                            <div className="mt-6 sm:mt-8 pt-4 border-t border-gray-100 flex justify-end">
+                                <button onClick={() => setSelectedAvocat(null)} className="bg-slate-100 hover:bg-slate-200 text-gray-800 font-bold py-2 px-4 sm:px-6 rounded-xl transition text-xs sm:text-sm">
+                                    Fermer
                                 </button>
                             </div>
                         </div>

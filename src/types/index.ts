@@ -1,4 +1,3 @@
-
 export interface Client {
   id: string;
   name: string;
@@ -24,7 +23,7 @@ export interface CaseProcedure {
   dateDebut?: string;
   dateFin?: string;
   status?: string;
-  linkedCases?: string[]; // dossier IDs linked to this procedure
+  linkedCases?: string[];
 }
 
 export interface Case {
@@ -102,7 +101,7 @@ export interface Avocat {
   barreaux?: string[];
   maritalStatus?: 'Célibataire' | 'Marié(e)' | 'Divorcé(e)' | 'Veuf(ve)';
   physicalAddress?: string;
-  hasChildren?: boolean;
+  hasChildren?: 'Oui' | 'Non';
   childrenCount?: number;
   bankAccounts?: BankAccount[];
   created_at?: string;
@@ -147,7 +146,7 @@ export interface Personnel {
   serviceStatus: 'Actif' | 'Inactif' | 'Mise en disponibilité';
   salary: number;
   maritalStatus: 'Célibataire' | 'Marié(e)' | 'Divorcé(e)' | 'Veuf(ve)';
-  hasChildren?: boolean;
+  hasChildren?: 'Oui' | 'Non';
   childrenCount?: number;
   address: string;
   photo?: string;

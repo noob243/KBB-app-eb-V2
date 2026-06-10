@@ -12,7 +12,7 @@ interface GestionPageProps {
     invoices: Invoice[];
     avocats: Avocat[];
     personnels: Personnel[];
-    onDeleteClient: (id: number) => void;
+    onDeleteClient: (id: string) => void;
     onDeleteCase: (id: string) => void;
     onDeleteAvocat: (id: string) => void;
     onDeletePersonnel: (id: string) => void;

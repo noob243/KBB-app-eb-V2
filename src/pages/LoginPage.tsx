@@ -63,7 +63,7 @@ const LoginPage: FC<LoginPageProps> = ({ onLoginSuccess }) => {
                                         Mot de passe oublié ?
                                     </button>
                                 </div>
-                                <input type="password" name="password" className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="********" required />
+                                <input type="password" name="password" autoComplete="current-password" className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="********" required />
                             </div>
                             <div>
                                 <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-300 shadow-sm">Se connecter</button>

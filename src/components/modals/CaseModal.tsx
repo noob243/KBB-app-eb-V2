@@ -259,7 +259,9 @@ const CaseModal: FC<CaseModalProps> = ({
 
         onSave({
             id: formData.dossierId,
+            reference: formData.dossierId,
             name: formData.name,
+            clientId: selectedClient ? selectedClient.id.toString() : 'N/A',
             client: selectedClient ? selectedClient.name : 'N/A',
             status: formData.status,
             nextHearing: null,

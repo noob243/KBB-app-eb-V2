@@ -33,7 +33,7 @@ const AllInterfacesPage: FC<AllInterfacesPageProps> = (props) => {
         <div className="space-y-12">
             <div>
                 <h2 className="text-2xl font-bold text-gray-700 mb-4 pb-2 border-b-2 border-indigo-500">Tableau de Bord</h2>
-                <DashboardPage clients={props.clients} cases={props.cases} events={props.events} />
+                <DashboardPage clients={props.clients} cases={props.cases} events={props.events} tasks={props.tasks} />
             </div>
              <div>
                 <h2 className="text-2xl font-bold text-gray-700 mb-4 pb-2 border-b-2 border-indigo-500">Clients</h2>
@@ -49,7 +49,7 @@ const AllInterfacesPage: FC<AllInterfacesPageProps> = (props) => {
             </div>
             <div>
                 <h2 className="text-2xl font-bold text-gray-700 mb-4 pb-2 border-b-2 border-indigo-500">Agenda</h2>
-                <AgendaPage tasks={props.tasks} cases={props.cases} lawyers={props.lawyerNames} avocats={props.avocats} onAddTask={props.onAddTask} />
+                <AgendaPage tasks={props.tasks} cases={props.cases} lawyerNames={props.lawyerNames} avocats={props.avocats} onAddTask={props.onAddTask} />
             </div>
              <div className="h-[700px]">
                 <h2 className="text-2xl font-bold text-gray-700 mb-4 pb-2 border-b-2 border-indigo-500">Chat</h2>

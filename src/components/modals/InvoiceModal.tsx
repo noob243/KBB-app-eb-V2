@@ -50,6 +50,7 @@ const InvoiceModal: FC<InvoiceModalProps> = ({ isOpen, onClose, onSave, cases })
         onSave({ 
           ...formData, 
           id: formData.invoiceId, 
+          reference: formData.invoiceId,
           status: formData.status as Invoice['status'],
         });
         setFormData(initialFormState);

@@ -65,7 +65,7 @@ const EventModal: FC<EventModalProps> = ({ isOpen, onClose, onSave, avocats = []
         e.preventDefault();
         const selectedFundings = fundingSources
             .filter(src => src.checked)
-            .map(src => ({ label: src.label, amount: src.amount.trim() || '0' }));
+            .map(src => ({ label: src.label, amount: parseFloat(src.amount) || 0 }));
 
         const fundingString = selectedFundings
             .map(src => `${src.label} (${src.amount} €)`)
@@ -81,8 +81,9 @@ const EventModal: FC<EventModalProps> = ({ isOpen, onClose, onSave, avocats = []
           id: formData.eventId,
           type: formData.type as Event['type'],
           membresKBB: combinedKBB,
-          financement: fundingString,
-          financements: selectedFundings
+          financements: selectedFundings,
+          budgetPrevisionnel: parseFloat(formData.budgetPrevisionnel) || undefined,
+          budgetRealise: parseFloat(formData.budgetRealise) || undefined,
         });
         setFormData(initialFormState);
         setFundingSources(initialFundingSources);

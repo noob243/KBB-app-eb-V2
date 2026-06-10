@@ -109,13 +109,13 @@ const Header: FC<HeaderProps> = ({
   };
 
   return (
-    <header className="bg-white border-b border-gray-100 h-16 px-8 flex items-center justify-between shadow-sm relative z-50">
+    <header className="bg-white border-b border-gray-100 h-14 sm:h-16 px-3 sm:px-4 md:px-8 flex items-center justify-between shadow-sm relative z-50">
       {/* Global Search Bar */}
       <div ref={containerRef} className="w-full max-w-xl relative">
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <div className="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none">
             <svg
-              className="h-5 w-5 text-gray-400"
+              className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -132,8 +132,8 @@ const Header: FC<HeaderProps> = ({
           <input
             ref={inputRef}
             type="text"
-            className="block w-full pl-10 pr-24 py-2 border border-gray-200 rounded-xl bg-gray-50/50 hover:bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-sm text-gray-800 placeholder-gray-400"
-            placeholder="Rechercher clients, dossiers, événements... (⌘K)"
+            className="block w-full pl-8 sm:pl-10 pr-16 sm:pr-24 py-1.5 sm:py-2 border border-gray-200 rounded-xl bg-gray-50/50 hover:bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-xs sm:text-sm text-gray-800 placeholder-gray-400"
+            placeholder="Rechercher... (⌘K)"
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -141,15 +141,15 @@ const Header: FC<HeaderProps> = ({
             }}
             onFocus={() => setIsOpen(true)}
           />
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 space-x-2">
+          <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:pr-3 space-x-1">
             {searchQuery && (
               <button
                 type="button"
                 onClick={handleClear}
-                className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                className="text-gray-400 hover:text-gray-600 focus:outline-none p-1"
               >
                 <svg
-                  className="h-4 w-4"
+                  className="h-3 w-3 sm:h-4 sm:w-4"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -166,67 +166,41 @@ const Header: FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Search Results Dropdown Popover */}
+        {/* Search Results Dropdown Popover - responsive */}
         {isOpen && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-h-[85vh] flex flex-col z-50 animate-fade-in">
+          <div className="absolute top-full left-0 right-0 mt-1 sm:mt-2 bg-white rounded-xl sm:rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-h-[80vh] sm:max-h-[85vh] flex flex-col z-50 animate-fade-in">
             {isQueryEmpty ? (
-              <div className="p-5 text-center text-sm text-gray-400 bg-gray-50/40">
-                <p className="font-semibold text-gray-500 mb-1">Recherche globale intelligente</p>
-                <p className="text-xs">Saisissez un mot-clé pour lancer une recherche instantanée dans toute l'application.</p>
-                <div className="mt-4 flex flex-wrap justify-center gap-2">
-                  <span className="px-2 py-1 bg-white border border-gray-100 rounded-md text-[10px] text-gray-500 font-medium">Clients par Nom/Contact</span>
-                  <span className="px-2 py-1 bg-white border border-gray-100 rounded-md text-[10px] text-gray-500 font-medium">Dossiers par Réf./Titre</span>
-                  <span className="px-2 py-1 bg-white border border-gray-100 rounded-md text-[10px] text-gray-500 font-medium">Événements par Nom/Lieu</span>
-                </div>
+              <div className="p-3 sm:p-5 text-center text-xs sm:text-sm text-gray-400 bg-gray-50/40">
+                <p className="font-semibold text-gray-500 mb-1">Recherche globale</p>
+                <p className="text-2xs sm:text-xs">Saisissez un mot-clé pour une recherche instantanée.</p>
               </div>
             ) : !hasResults ? (
-              <div className="p-8 text-center text-sm text-gray-500 bg-gray-50/40">
-                <svg
-                  className="mx-auto h-8 w-8 text-gray-300 mb-2"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
-                <p className="font-medium">Aucun résultat trouvé pour « {searchQuery} »</p>
-                <p className="text-xs text-gray-400 mt-1">Vérifiez l'orthographe ou essayez un autre mot-clé.</p>
+              <div className="p-4 sm:p-8 text-center text-xs sm:text-sm text-gray-500 bg-gray-50/40">
+                <p className="font-medium">Aucun résultat pour « {searchQuery} »</p>
               </div>
             ) : (
-              <div className="overflow-y-auto divide-y divide-gray-100 custom-scrollbar max-h-96">
+              <div className="overflow-y-auto divide-y divide-gray-100 custom-scrollbar max-h-72 sm:max-h-96">
                 {/* MATCHED CLIENTS */}
                 {matchedClients.length > 0 && (
-                  <div className="p-4">
-                    <h3 className="text-2xs font-bold uppercase tracking-widest text-[#15447c] mb-2 flex items-center">
-                      <svg className="w-4 h-4 mr-1.5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-4.684v-.005z" />
-                      </svg>
-                      Clients ({matchedClients.length})
+                  <div className="p-2 sm:p-4">
+                    <h3 className="text-2xs font-bold uppercase tracking-widest text-[#15447c] mb-1 sm:mb-2 flex items-center">
+                      Clts ({matchedClients.length})
                     </h3>
-                    <div className="space-y-1">
+                    <div className="space-y-0.5 sm:space-y-1">
                       {matchedClients.map((client) => (
                         <button
                           key={client.id}
                           onClick={() => handleResultClick('Clients', client.name)}
-                          className="w-full text-left px-3 py-2 rounded-xl hover:bg-indigo-50/50 transition duration-150 flex items-center justify-between group"
+                          className="w-full text-left px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl hover:bg-indigo-50/50 transition duration-150 flex items-center justify-between group"
                         >
-                          <div>
-                            <div className="text-sm font-semibold text-gray-800 group-hover:text-indigo-600">
+                          <div className="min-w-0">
+                            <div className="text-xs sm:text-sm font-semibold text-gray-800 group-hover:text-indigo-600 truncate">
                               {highlightText(client.name, searchQuery)}
                             </div>
-                            <div className="text-xs text-gray-400">
-                              Contact : {highlightText(client.contact, searchQuery)}
+                            <div className="text-2xs sm:text-xs text-gray-400 truncate">
+                              {highlightText(client.contact, searchQuery)}
                             </div>
                           </div>
-                          <span className="text-2xs font-bold uppercase tracking-wider text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg group-hover:bg-indigo-100 group-hover:text-indigo-700 transition">
-                            Voir Client
-                          </span>
                         </button>
                       ))}
                     </div>
@@ -235,41 +209,24 @@ const Header: FC<HeaderProps> = ({
 
                 {/* MATCHED CASES */}
                 {matchedCases.length > 0 && (
-                  <div className="p-4">
-                    <h3 className="text-2xs font-bold uppercase tracking-widest text-[#15447c] mb-2 flex items-center">
-                      <svg className="w-4 h-4 mr-1.5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                      </svg>
+                  <div className="p-2 sm:p-4">
+                    <h3 className="text-2xs font-bold uppercase tracking-widest text-[#15447c] mb-1 sm:mb-2 flex items-center">
                       Dossiers ({matchedCases.length})
                     </h3>
-                    <div className="space-y-1">
+                    <div className="space-y-0.5 sm:space-y-1">
                       {matchedCases.map((c) => (
                         <button
                           key={c.id}
-                          onClick={() => handleResultClick('Dossiers', c.id)}
-                          className="w-full text-left px-3 py-2 rounded-xl hover:bg-indigo-50/50 transition duration-150 flex items-center justify-between group"
+                          onClick={() => handleResultClick('Cases', c.id)}
+                          className="w-full text-left px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl hover:bg-indigo-50/50 transition duration-150 flex items-center justify-between group"
                         >
-                          <div>
-                            <div className="text-sm font-semibold text-gray-800 group-hover:text-indigo-600 flex items-center gap-2">
+                          <div className="min-w-0">
+                            <div className="text-xs sm:text-sm font-semibold text-gray-800 group-hover:text-indigo-600 truncate">
                               {highlightText(c.name, searchQuery)}
-                              <span className="font-mono text-xs text-gray-400 font-normal">({highlightText(c.id, searchQuery)})</span>
                             </div>
-                            <div className="text-xs text-gray-500">
-                              Client : {highlightText(c.client, searchQuery)}
+                            <div className="text-2xs sm:text-xs text-gray-400 truncate">
+                              {c.client} — <span className="font-mono">{c.id}</span>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 rounded-full text-2xs font-semibold ${
-                              c.status === 'En cours' ? 'bg-blue-50 text-blue-700 border border-blue-150' : 
-                              c.status === 'Clôturé' ? 'bg-green-50 text-green-700 border border-green-150' : 
-                              c.status === 'Nouveau' ? 'bg-purple-50 text-purple-700 border border-purple-150' :
-                              'bg-yellow-50 text-yellow-700 border border-yellow-150'
-                            }`}>
-                              {c.status}
-                            </span>
-                            <span className="text-2xs font-bold uppercase tracking-wider text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg group-hover:bg-indigo-100 group-hover:text-indigo-700 transition">
-                              Gérer
-                            </span>
                           </div>
                         </button>
                       ))}
@@ -279,36 +236,24 @@ const Header: FC<HeaderProps> = ({
 
                 {/* MATCHED EVENTS */}
                 {matchedEvents.length > 0 && (
-                  <div className="p-4">
-                    <h3 className="text-2xs font-bold uppercase tracking-widest text-[#15447c] mb-2 flex items-center">
-                      <svg className="w-4 h-4 mr-1.5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75" />
-                      </svg>
+                  <div className="p-2 sm:p-4">
+                    <h3 className="text-2xs font-bold uppercase tracking-widest text-[#15447c] mb-1 sm:mb-2 flex items-center">
                       Événements ({matchedEvents.length})
                     </h3>
-                    <div className="space-y-1">
+                    <div className="space-y-0.5 sm:space-y-1">
                       {matchedEvents.map((event) => (
                         <button
                           key={event.id}
-                          onClick={() => handleResultClick('Evenements', event.name)}
-                          className="w-full text-left px-3 py-2 rounded-xl hover:bg-indigo-50/50 transition duration-150 flex items-center justify-between group"
+                          onClick={() => handleResultClick('Events', event.name)}
+                          className="w-full text-left px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl hover:bg-indigo-50/50 transition duration-150 flex items-center justify-between group"
                         >
-                          <div>
-                            <div className="text-sm font-semibold text-gray-800 group-hover:text-indigo-600">
+                          <div className="min-w-0">
+                            <div className="text-xs sm:text-sm font-semibold text-gray-800 group-hover:text-indigo-600 truncate">
                               {highlightText(event.name, searchQuery)}
                             </div>
-                            <div className="text-xs text-gray-500 flex items-center gap-3">
-                              <span>📅 {event.date}</span>
-                              <span>📍 {highlightText(event.lieu, searchQuery)}</span>
+                            <div className="text-2xs sm:text-xs text-gray-400 truncate">
+                              {event.date} — {highlightText(event.lieu, searchQuery)}
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-2xs font-medium">
-                              {highlightText(event.type, searchQuery)}
-                            </span>
-                            <span className="text-2xs font-bold uppercase tracking-wider text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg group-hover:bg-indigo-100 group-hover:text-indigo-700 transition">
-                              Voir Détails
-                            </span>
                           </div>
                         </button>
                       ))}
@@ -317,25 +262,19 @@ const Header: FC<HeaderProps> = ({
                 )}
               </div>
             )}
-            <div className="bg-slate-50 border-t border-slate-100 p-2.5 px-4 text-center text-3xs text-gray-400 font-bold uppercase tracking-wider flex justify-between items-center">
-              <span>Résultats de recherche rapides</span>
-              <span className="flex items-center gap-1.5">
-                <kbd className="px-1 bg-white border border-gray-150 rounded text-4xs">Esc</kbd> pour fermer
-              </span>
-            </div>
           </div>
         )}
       </div>
 
-      {/* User Context Info (Right Side of Header) */}
-      <div className="flex items-center space-x-4">
-        <div className="hidden md:flex flex-col text-right">
+      {/* User Context Info - hidden on very small screens */}
+      <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0 ml-2">
+        <div className="hidden sm:flex sm:flex-col text-right">
           <span className="text-xs font-bold text-gray-800">Jean-Luc Tshisekedi</span>
-          <span className="text-3xs font-black tracking-widest text-[#15447c] uppercase">Avocat Associé KBB</span>
+          <span className="text-3xs font-black tracking-widest text-[#15447c] uppercase">Avocat KBB</span>
         </div>
-        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#15447c] to-indigo-800 text-white flex items-center justify-center font-bold text-sm shadow-md border border-indigo-100 relative">
+        <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-br from-[#15447c] to-indigo-800 text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-md border border-indigo-100 relative flex-shrink-0">
           JT
-          <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white"></span>
+          <span className="absolute bottom-0 right-0 block h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-emerald-500 ring-2 ring-white"></span>
         </div>
       </div>
     </header>

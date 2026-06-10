@@ -19,7 +19,7 @@ const PersonnelModal: FC<PersonnelModalProps> = ({ isOpen, onClose, onSave }) =>
         email: '',
         salary: 800,
         maritalStatus: 'Célibataire' as const,
-        hasChildren: 'Non' as const,
+        hasChildren: 'Non' as 'Oui' | 'Non',
         childrenCount: 0,
         address: '',
         photo: '',

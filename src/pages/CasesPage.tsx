@@ -1,4 +1,3 @@
-
 import React, { FC, useState } from 'react';
 import PageContainer from '../components/PageContainer';
 import CaseModal from '../components/modals/CaseModal';
@@ -7,20 +6,64 @@ import { Case, Client, Avocat, Task } from '../types';
 interface CasesPageProps {
   cases: Case[];
   clients: Client[];
-  tasks?: Task[]; // Made optional for compatibility
+  tasks?: Task[];
   onAddCase: (dossier: Case, tasks?: Omit<Task, 'id'>[]) => void;
   onExport: () => void;
   avocats: Avocat[];
+  onDeleteCase?: (id: string) => void;
+  onUpdateCase?: (c: Case) => void;
 }
 
-const CasesPage: FC<CasesPageProps> = ({ cases, clients, tasks = [], onAddCase, onExport, avocats }) => {
+const CasesPage: FC<CasesPageProps> = ({ cases, clients, tasks = [], onAddCase, onExport, avocats, onDeleteCase, onUpdateCase }) => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [selectedCase, setSelectedCase] = useState<Case | null>(null);
 
     return (
         <>
             <PageContainer title="Dossiers" buttonLabel="Créer un Dossier" onButtonClick={() => setIsAddModalOpen(true)} exportButtonLabel="Exporter en PDF" onExportClick={onExport}>
-                 <div className="overflow-x-auto">
+                {/* Mobile: cards */}
+                <div className="sm:hidden space-y-3">
+                    {cases.map(c => (
+                        <div key={c.id} className="p-4 bg-white border border-gray-200 rounded-xl">
+                            <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                    <p className="font-semibold text-gray-800 truncate">{c.name}</p>
+                                    <p className="text-xs text-gray-400 mt-0.5 truncate">👤 {c.client}</p>
+                                    <p className="text-[10px] font-mono text-gray-400 mt-0.5">{c.id}</p>
+                                </div>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap flex-shrink-0 ${
+                                    c.status === 'En cours' ? 'bg-blue-50 text-blue-800 border border-blue-150' : 
+                                    c.status === 'Clôturé' ? 'bg-green-50 text-green-800 border border-green-150' : 
+                                    c.status === 'Nouveau' ? 'bg-purple-50 text-purple-800 border border-purple-150' :
+                                    'bg-yellow-50 text-yellow-800 border border-yellow-150'}`}>{c.status}</span>
+                            </div>
+                            <div className="mt-3 flex gap-2">
+                                <button 
+                                    onClick={() => setSelectedCase(c)}
+                                    className="flex-1 text-indigo-600 font-bold text-xs bg-indigo-50 hover:bg-indigo-100 py-2 rounded-xl transition"
+                                >
+                                    Gérer
+                                </button>
+                                {onDeleteCase && (
+                                    <button 
+                                        onClick={() => onDeleteCase(c.id)}
+                                        className="px-3 text-red-500 font-bold text-xs bg-red-50 hover:bg-red-100 py-2 rounded-xl transition"
+                                    >
+                                        Suppr.
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                    {cases.length === 0 && (
+                        <div className="p-8 text-center text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                            <p className="font-semibold">Aucun dossier</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Desktop: table */}
+                <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr className="text-sm text-gray-600">
@@ -34,11 +77,11 @@ const CasesPage: FC<CasesPageProps> = ({ cases, clients, tasks = [], onAddCase, 
                         <tbody>
                             {cases.map(c => (
                                 <tr key={c.id} className="border-b border-gray-200 hover:bg-gray-50">
-                                    <td className="p-4 font-mono text-xs text-indigo-900 font-bold">{c.id}</td>
+                                    <td className="p-4 font-mono text-xs text-indigo-900 font-bold whitespace-nowrap">{c.id}</td>
                                     <td className="p-4 font-medium text-gray-800">{c.name}</td>
                                     <td className="p-4 text-gray-600">{c.client}</td>
                                     <td className="p-4">
-                                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border whitespace-nowrap ${
                                             c.status === 'En cours' ? 'bg-blue-50 text-blue-800 border-blue-150' : 
                                             c.status === 'Clôturé' ? 'bg-green-50 text-green-800 border-green-150' : 
                                             c.status === 'Nouveau' ? 'bg-purple-50 text-purple-800 border-purple-150' :
@@ -51,6 +94,14 @@ const CasesPage: FC<CasesPageProps> = ({ cases, clients, tasks = [], onAddCase, 
                                         >
                                             Gérer
                                         </button>
+                                        {onDeleteCase && (
+                                            <button 
+                                                onClick={() => onDeleteCase(c.id)}
+                                                className="ml-2 text-red-500 hover:text-red-700 font-bold text-sm bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-xl transition"
+                                            >
+                                                Suppr.
+                                            </button>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
@@ -61,19 +112,17 @@ const CasesPage: FC<CasesPageProps> = ({ cases, clients, tasks = [], onAddCase, 
             
             <CaseModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSave={onAddCase} clients={clients} avocats={avocats} cases={cases} />
 
-            {/* Case Details / Management Modal */}
             {selectedCase && (() => {
                 const caseTasks = tasks.filter(t => t.caseId.toLowerCase() === selectedCase.id.toLowerCase());
                 
                 return (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-4">
-                        <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-fadeIn">
-                            {/* Header */}
-                            <div className="flex justify-between items-start mb-6 border-b border-gray-100 pb-4">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-3 sm:p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto animate-fadeIn m-3 sm:m-0">
+                            <div className="flex justify-between items-start mb-4 sm:mb-6 border-b border-gray-100 pb-3 sm:pb-4">
+                                <div className="min-w-0 flex-1 pr-2">
+                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                                         <span className="text-2xs font-bold text-indigo-600 font-mono uppercase tracking-widest">{selectedCase.id}</span>
-                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${
                                             selectedCase.status === 'En cours' ? 'bg-blue-50 text-blue-700 border border-blue-100' : 
                                             selectedCase.status === 'Clôturé' ? 'bg-green-50 text-green-700 border border-green-100' : 
                                             selectedCase.status === 'Nouveau' ? 'bg-purple-50 text-purple-700 border border-purple-100' : 
@@ -82,23 +131,22 @@ const CasesPage: FC<CasesPageProps> = ({ cases, clients, tasks = [], onAddCase, 
                                             {selectedCase.status}
                                         </span>
                                     </div>
-                                    <h2 className="text-2xl font-extrabold text-gray-850">{selectedCase.name}</h2>
+                                    <h2 className="text-lg sm:text-2xl font-extrabold text-gray-850 truncate">{selectedCase.name}</h2>
                                     <p className="text-xs text-gray-500 mt-1">Client : <strong className="font-semibold text-gray-700">{selectedCase.client}</strong></p>
                                 </div>
                                 <button 
                                     onClick={() => setSelectedCase(null)} 
-                                    className="p-1.5 hover:bg-slate-100 rounded-xl text-gray-400 hover:text-gray-650 transition"
+                                    className="p-1.5 hover:bg-slate-100 rounded-xl text-gray-400 hover:text-gray-650 transition flex-shrink-0"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                                     </svg>
                                 </button>
                             </div>
 
-                            {/* Procedure / Hearing Details */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl md:col-span-2">
-                                    <span className="text-2xs font-extrabold text-slate-400 uppercase tracking-widest block mb-1">Prochaine Audience d'étape</span>
+                            <div className="space-y-4 sm:space-y-6 mb-4 sm:mb-6">
+                                <div className="p-3 sm:p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                                    <span className="text-2xs font-extrabold text-slate-400 uppercase tracking-widest block mb-1">Prochaine Audience</span>
                                     {selectedCase.nextHearing ? (
                                         <div className="flex items-center gap-2 mt-1">
                                             <span className="text-sm">📆</span>
@@ -109,33 +157,33 @@ const CasesPage: FC<CasesPageProps> = ({ cases, clients, tasks = [], onAddCase, 
                                     )}
                                 </div>
 
-                                <div className="md:col-span-2 space-y-3 bg-indigo-50/15 border border-indigo-100/50 p-4 rounded-xl">
-                                    <span className="text-[10px] font-black text-[#15447c] uppercase tracking-wider block mb-2">⚖️ Procédures du Dossier</span>
+                                <div className="bg-indigo-50/15 border border-indigo-100/50 p-3 sm:p-4 rounded-xl">
+                                    <span className="text-[10px] font-black text-[#15447c] uppercase tracking-wider block mb-2">⚖️ Procédures</span>
                                     {!selectedCase.procedures || selectedCase.procedures.length === 0 ? (
-                                        <div className="p-3 bg-white border border-slate-150 rounded-lg text-xs">
-                                            <p className="font-bold text-gray-800">{selectedCase.procedure || "Procédure d'Arbitrage Standard"}</p>
-                                            <p className="text-3xs text-gray-500 font-bold uppercase mt-1">
-                                                Instance: {selectedCase.procedureInstance || "Tribunal"} • Objet: {selectedCase.procedureObjet || "N/A"}
+                                        <div className="p-3 bg-white border border-slate-150 rounded-lg">
+                                            <p className="text-xs font-bold text-gray-800">{selectedCase.procedure || "Procédure Standard"}</p>
+                                            <p className="text-[10px] text-gray-500 font-bold mt-1">
+                                                Instance: {selectedCase.procedureInstance || "N/A"} 
                                             </p>
                                         </div>
                                     ) : (
                                         <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                                             {selectedCase.procedures.map(p => (
-                                                <div key={p.id} className="p-3 bg-white border border-slate-150 rounded-xl flex items-start justify-between gap-4 shadow-3xs">
-                                                    <div>
-                                                        <p className="text-xs font-black text-slate-800 leading-tight">{p.name}</p>
-                                                        <p className="text-[10px] text-gray-500 font-semibold mt-1">
-                                                            Instance : <strong className="text-gray-700">{p.instance || 'Non précisée'}</strong> • Objet : <strong className="text-gray-700">{p.objet || 'Non défini'}</strong>
-                                                        </p>
-                                                        <p className="text-3xs text-slate-400 font-bold uppercase mt-0.5">Introduit le : {p.dateDebut || 'Non défini'} • Fin le : {p.dateFin || 'Non défini'}</p>
+                                                <div key={p.id} className="p-3 bg-white border border-slate-150 rounded-xl">
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="text-xs font-black text-slate-800 leading-tight truncate">{p.name}</p>
+                                                            <p className="text-[10px] text-gray-500 font-semibold mt-1">{p.instance || 'N/A'} • {p.objet || 'N/A'}</p>
+                                                            <p className="text-[10px] text-slate-400 font-bold mt-0.5">{p.dateDebut || ''} → {p.dateFin || ''}</p>
+                                                        </div>
+                                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap flex-shrink-0 ${
+                                                            p.status === 'En cours' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                                                            p.status === 'Clôturé' ? 'bg-green-50 text-green-700 border-green-100' :
+                                                            'bg-amber-50 text-amber-700 border-amber-100'
+                                                        }`}>
+                                                            {p.status || 'En cours'}
+                                                        </span>
                                                     </div>
-                                                    <span className={`px-2 py-0.5 rounded text-3xs font-bold uppercase tracking-wider border shrink-0 ${
-                                                        p.status === 'En cours' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                                                        p.status === 'Clôturé' ? 'bg-green-50 text-green-700 border-green-100' :
-                                                        'bg-amber-50 text-amber-700 border-amber-100'
-                                                    }`}>
-                                                        {p.status || 'En cours'}
-                                                    </span>
                                                 </div>
                                             ))}
                                         </div>
@@ -143,25 +191,24 @@ const CasesPage: FC<CasesPageProps> = ({ cases, clients, tasks = [], onAddCase, 
                                 </div>
                             </div>
 
-                            {/* Associated Tasks */}
-                            <div className="border-t border-gray-100 pt-5">
+                            <div className="border-t border-gray-100 pt-4 sm:pt-5">
                                 <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest mb-3">
-                                    Tâches et Délais associés ({caseTasks.length})
+                                    Tâches ({caseTasks.length})
                                 </h3>
 
                                 {caseTasks.length === 0 ? (
-                                    <div className="p-5 text-center bg-gray-50 border border-dashed border-gray-200 rounded-xl text-gray-400 text-xs">
-                                        Aucune tâche ouverte ou en retard signalée pour ce dossier.
+                                    <div className="p-4 sm:p-5 text-center bg-gray-50 border border-dashed border-gray-200 rounded-xl text-gray-400 text-xs">
+                                        Aucune tâche pour ce dossier.
                                     </div>
                                 ) : (
-                                    <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                                    <div className="space-y-2 max-h-48 sm:max-h-52 overflow-y-auto pr-1">
                                         {caseTasks.map(t => (
-                                            <div key={t.id} className="p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between hover:bg-slate-100/50 transition">
+                                            <div key={t.id} className="p-3 bg-slate-50 border border-slate-100 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                                 <div>
-                                                    <span className="text-sm font-semibold text-gray-800 block leading-tight">{t.name}</span>
-                                                    <span className="text-[10px] text-gray-400 font-medium">Responsable : {t.lawyer} • Échéance : {t.dueDate}</span>
+                                                    <span className="text-xs sm:text-sm font-semibold text-gray-800 block leading-tight">{t.name}</span>
+                                                    <span className="text-[10px] text-gray-400 font-medium">👤 {t.lawyer} • {t.dueDate}</span>
                                                 </div>
-                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap self-start sm:self-auto ${
                                                     t.status === 'Effectué' ? 'bg-green-50 text-green-700 border-green-100' : 
                                                     t.status === 'Effectué à moitié' ? 'bg-amber-50 text-amber-700 border-amber-100' :
                                                     'bg-rose-50 text-rose-700 border-rose-100'
@@ -174,16 +221,12 @@ const CasesPage: FC<CasesPageProps> = ({ cases, clients, tasks = [], onAddCase, 
                                 )}
                             </div>
 
-                            {/* Action Operations */}
-                            <div className="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between">
-                                <div className="text-2xs text-gray-400">
-                                    Propriété exclusive de Cabinet KBB SARL
-                                </div>
+                            <div className="mt-6 sm:mt-8 pt-4 border-t border-gray-100 flex justify-end">
                                 <button 
                                     onClick={() => setSelectedCase(null)} 
-                                    className="bg-slate-100 hover:bg-slate-200 text-gray-800 font-bold py-2 px-6 rounded-xl transition duration-150 text-sm"
+                                    className="bg-slate-100 hover:bg-slate-200 text-gray-800 font-bold py-2 px-4 sm:px-6 rounded-xl transition duration-150 text-xs sm:text-sm"
                                 >
-                                    Fermer le dossier
+                                    Fermer
                                 </button>
                             </div>
                         </div>
