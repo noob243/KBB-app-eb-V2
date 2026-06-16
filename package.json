@@ -8,11 +8,14 @@
     "build": "vite build",
     "preview": "vite preview"
   },
+  "engines": {
+    "node": "20.x"
+  },
   "dependencies": {
     "@capacitor/android": "^5.0.0",
     "@capacitor/core": "^5.0.0",
     "@capacitor/ios": "^5.0.0",
-    "@google/genai": "latest",
+    "@google/genai": "^2.8.0",
     "@supabase/supabase-js": "^2.107.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
