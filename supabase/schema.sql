@@ -19,6 +19,8 @@ CREATE TABLE clients (
     siege           TEXT,
     dirigeant       TEXT,
     type_facturation TEXT,
+    cases           INTEGER NOT NULL DEFAULT 0,
+    sieges          JSONB,
     created_at      TIMESTAMPTZ DEFAULT NOW(),
     updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
@@ -354,7 +356,55 @@ CREATE TRIGGER trg_personnels_updated   BEFORE UPDATE ON personnels    FOR EACH 
 CREATE TRIGGER trg_fournisseurs_updated BEFORE UPDATE ON fournisseurs  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- ============================================================
--- 14. ROW LEVEL SECURITY (prêt pour Supabase Auth)
+-- 14. TRIGGERS pour la dénormalisation de la table clients
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION update_client_cases_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (TG_OP = 'INSERT' OR TG_OP = 'UPDATE') THEN
+        UPDATE clients SET cases = (SELECT COUNT(*) FROM cases WHERE client_id = NEW.client_id) WHERE id = NEW.client_id;
+    END IF;
+
+    IF (TG_OP = 'DELETE' OR (TG_OP = 'UPDATE' AND NEW.client_id IS DISTINCT FROM OLD.client_id)) THEN
+        UPDATE clients SET cases = (SELECT COUNT(*) FROM cases WHERE client_id = OLD.client_id) WHERE id = OLD.client_id;
+    END IF;
+    
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_update_client_cases_count ON cases;
+CREATE TRIGGER trg_update_client_cases_count
+AFTER INSERT OR DELETE OR UPDATE OF client_id ON cases
+FOR EACH ROW EXECUTE FUNCTION update_client_cases_count();
+
+CREATE OR REPLACE FUNCTION update_client_sieges_json()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (TG_OP = 'INSERT' OR TG_OP = 'UPDATE') THEN
+      UPDATE clients
+      SET sieges = (SELECT jsonb_agg(adresse) FROM client_sieges WHERE client_id = NEW.client_id)
+      WHERE id = NEW.client_id;
+    END IF;
+    
+    IF (TG_OP = 'DELETE' OR (TG_OP = 'UPDATE' AND NEW.client_id IS DISTINCT FROM OLD.client_id)) THEN
+      UPDATE clients
+      SET sieges = (SELECT jsonb_agg(adresse) FROM client_sieges WHERE client_id = OLD.client_id)
+      WHERE id = OLD.client_id;
+    END IF;
+    
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_update_client_sieges_json ON client_sieges;
+CREATE TRIGGER trg_update_client_sieges_json
+AFTER INSERT OR DELETE OR UPDATE ON client_sieges
+FOR EACH ROW EXECUTE FUNCTION update_client_sieges_json();
+
+-- ============================================================
+-- 15. ROW LEVEL SECURITY (prêt pour Supabase Auth)
 -- ============================================================
 ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE avocats ENABLE ROW LEVEL SECURITY;

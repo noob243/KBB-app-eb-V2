@@ -27,8 +27,7 @@ const PageContainer: FC<PageContainerProps> = ({ title, children, buttonLabel, o
                 {buttonLabel && onButtonClick && (
                     <button onClick={onButtonClick} className="bg-indigo-600 text-white font-bold py-2 px-3 sm:px-4 rounded-lg hover:bg-indigo-700 transition duration-300 shadow-sm flex items-center text-xs sm:text-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                        <span className="hidden sm:inline">{buttonLabel}</span>
-                        <span className="sm:hidden">Ajouter</span>
+                        <span>{buttonLabel}</span>
                     </button>
                 )}
             </div>

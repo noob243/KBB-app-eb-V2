@@ -5,46 +5,39 @@ import { Event, Avocat } from '../../types';
 interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (event: Event) => void;
+  onSave: (event: Omit<Event, 'id'>) => void; // L'ID sera généré par la DB
   avocats?: Avocat[];
 }
 
 const EventModal: FC<EventModalProps> = ({ isOpen, onClose, onSave, avocats = [] }) => {
     const today = new Date().toISOString().split('T')[0];
     const initialFormState = {
-        name: '', eventId: '', type: 'Audience', partenaires: '', date: today, lieu: '',
-        publicCible: '', membresKBB: '', membresExternes: '', budgetPrevisionnel: '',
-        budgetRealise: '', financement: 'Interne', sponsors: '',
+        name: '',
+        type: 'Audience' as Event['type'],
+        date: today,
+        lieu: '',
+        partenaires: '',
+        public_cible: '', // Corrigé
+        membres_kbb: '',   // Corrigé
+        membres_externes: '', // Corrigé
+        budget_previsionnel: '', // Corrigé
+        budget_realise: '', // Corrigé
+        sponsors: '',
+        financements: [],
     };
-    const [formData, setFormData] = useState(initialFormState);
 
-    const initialFundingSources = [
-        { id: 'KBB', label: 'Cabinet KBB', checked: true, amount: '' },
-        { id: 'Sponsors', label: 'Sponsors externe', checked: false, amount: '' },
-        { id: 'Autre', label: 'Autres', checked: false, amount: '' },
-    ];
-    const [fundingSources, setFundingSources] = useState(initialFundingSources);
-
+    const [formData, setFormData] = useState<Omit<Event, 'id'>>(initialFormState);
     const [selectedKbbMembers, setSelectedKbbMembers] = useState<string[]>([]);
     const [customKbbMembers, setCustomKbbMembers] = useState<string>('');
     const [isKbbDropdownOpen, setIsKbbDropdownOpen] = useState<boolean>(false);
 
     useEffect(() => {
         if (isOpen) {
+            setFormData(initialFormState);
             setSelectedKbbMembers([]);
             setCustomKbbMembers('');
-            setIsKbbDropdownOpen(false);
         }
     }, [isOpen]);
-
-    useEffect(() => {
-        if (formData.name) {
-            const generatedId = `EVT-${formData.name.trim().toUpperCase().replace(/\s+/g, '-').replace(/[^A-Z0-9-]/g, '')}`;
-            setFormData(prev => ({ ...prev, eventId: generatedId }));
-        } else {
-            setFormData(prev => ({ ...prev, eventId: '' }));
-        }
-    }, [formData.name]);
 
     if (!isOpen) return null;
 
@@ -63,32 +56,20 @@ const EventModal: FC<EventModalProps> = ({ isOpen, onClose, onSave, avocats = []
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const selectedFundings = fundingSources
-            .filter(src => src.checked)
-            .map(src => ({ label: src.label, amount: parseFloat(src.amount) || 0 }));
-
-        const fundingString = selectedFundings
-            .map(src => `${src.label} (${src.amount} €)`)
-            .join(', ') || 'Aucun financement';
 
         const combinedKBB = [
             ...selectedKbbMembers,
             ...(customKbbMembers.trim() ? [customKbbMembers.trim()] : [])
         ].join(', ');
 
-        onSave({ 
-          ...formData, 
-          id: formData.eventId,
-          type: formData.type as Event['type'],
-          membresKBB: combinedKBB,
-          financements: selectedFundings,
-          budgetPrevisionnel: parseFloat(formData.budgetPrevisionnel) || undefined,
-          budgetRealise: parseFloat(formData.budgetRealise) || undefined,
-        });
-        setFormData(initialFormState);
-        setFundingSources(initialFundingSources);
-        setSelectedKbbMembers([]);
-        setCustomKbbMembers('');
+        const finalData = {
+            ...formData,
+            membres_kbb: combinedKBB,
+            budget_previsionnel: parseFloat(formData.budget_previsionnel) || 0,
+            budget_realise: parseFloat(formData.budget_realise) || 0,
+        };
+
+        onSave(finalData);
         onClose();
     };
     
@@ -110,17 +91,13 @@ const EventModal: FC<EventModalProps> = ({ isOpen, onClose, onSave, avocats = []
                                 <input type="text" name="name" value={formData.name} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md shadow-sm" required />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">ID Event (auto)</label>
-                                <input type="text" name="eventId" value={formData.eventId} className="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-gray-100" readOnly />
-                            </div>
-                            <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Type de l'évènement</label>
                                 <select name="type" value={formData.type} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md shadow-sm">
-                                    <option>Audience</option>
-                                    <option>Colloque</option>
-                                    <option>Conférence</option>
-                                    <option>Séminaire</option>
-                                    <option>Autre</option>
+                                    <option value="Audience">Audience</option>
+                                    <option value="Colloque">Colloque</option>
+                                    <option value="Conférence">Conférence</option>
+                                    <option value="Séminaire">Séminaire</option>
+                                    <option value="Autre">Autre</option>
                                 </select>
                             </div>
                              <div>
@@ -133,56 +110,18 @@ const EventModal: FC<EventModalProps> = ({ isOpen, onClose, onSave, avocats = []
                             </div>
                              <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Public cible</label>
-                                <input type="text" name="publicCible" value={formData.publicCible} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+                                <input type="text" name="public_cible" value={formData.public_cible} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md shadow-sm" />
                             </div>
                         </div>
                         {/* Column 2 */}
                          <div className="space-y-4">
                              <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Sources de financement</label>
-                                <div className="space-y-1.5 border border-gray-250 rounded-xl p-3 bg-slate-50/50 max-h-[220px] overflow-y-auto custom-scrollbar shadow-inner">
-                                    {fundingSources.map((source, index) => (
-                                        <div key={source.id} className={`flex items-center justify-between p-2 rounded-xl border transition-all duration-200 ${source.checked ? 'bg-indigo-50/20 border-indigo-200/50 shadow-xs' : 'bg-white border-gray-200'}`}>
-                                            <label className="flex items-center space-x-2.5 cursor-pointer select-none">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={source.checked}
-                                                    onChange={(e) => {
-                                                        const updated = [...fundingSources];
-                                                        updated[index].checked = e.target.checked;
-                                                        setFundingSources(updated);
-                                                    }}
-                                                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500/20 h-4 w-4 transition-all"
-                                                />
-                                                <span className={`text-xs ${source.checked ? 'text-[#15447c] font-bold' : 'text-gray-600 font-medium'}`}>{source.label}</span>
-                                            </label>
-                                            {source.checked && (
-                                                <div className="flex items-center space-x-1.5 animate-fadeIn">
-                                                    <input
-                                                        type="number"
-                                                        placeholder="Montant"
-                                                        value={source.amount}
-                                                        onChange={(e) => {
-                                                            const updated = [...fundingSources];
-                                                            updated[index].amount = e.target.value;
-                                                            setFundingSources(updated);
-                                                        }}
-                                                        className="w-24 px-2 py-1 bg-white border border-gray-300 rounded-lg text-xs font-bold text-gray-800 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                                                    />
-                                                    <span className="text-2xs font-bold text-indigo-700">€</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Budget prévisionnel</label>
-                                <input type="number" name="budgetPrevisionnel" placeholder="€" value={formData.budgetPrevisionnel} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+                                <input type="number" name="budget_previsionnel" placeholder="€" value={formData.budget_previsionnel} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md shadow-sm" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Budget réalisé</label>
-                                <input type="number" name="budgetRealise" placeholder="€" value={formData.budgetRealise} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+                                <input type="number" name="budget_realise" placeholder="€" value={formData.budget_realise} onChange={handleChange} className="w-full p-2 border border-gray-300 rounded-md shadow-sm" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Partenaires</label>
@@ -300,7 +239,7 @@ const EventModal: FC<EventModalProps> = ({ isOpen, onClose, onSave, avocats = []
                         </div>
                         <div className="md:col-span-2">
                              <label className="block text-sm font-medium text-gray-700 mb-1">Membres de l'organisation (Externe)</label>
-                             <textarea name="membresExternes" value={formData.membresExternes} onChange={handleChange} rows={2} className="w-full p-2 border border-gray-300 rounded-md shadow-sm"></textarea>
+                             <textarea name="membres_externes" value={formData.membres_externes} onChange={handleChange} rows={2} className="w-full p-2 border border-gray-300 rounded-md shadow-sm"></textarea>
                         </div>
                     </div>
                     <div className="mt-8 flex justify-end space-x-4">
