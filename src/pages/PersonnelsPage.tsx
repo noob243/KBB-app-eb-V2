@@ -5,14 +5,30 @@ import { Personnel } from '../types';
 
 interface PersonnelsPageProps {
   personnels: Personnel[];
-  onAddPersonnel: (personnel: Personnel) => void;
-  onDeletePersonnel: (id: string) => void;
+  onAddPersonnel: (personnel: Omit<Personnel, 'id'>) => Promise<Personnel | null>;
+  onDeletePersonnel: (id: string) => Promise<boolean>;
+  onUpdatePersonnel: (personnel: Personnel) => Promise<Personnel | null>;
+
 }
 
-const PersonnelsPage: FC<PersonnelsPageProps> = ({ personnels, onAddPersonnel, onDeletePersonnel }) => {
+const PersonnelsPage: FC<PersonnelsPageProps> = ({ personnels, onAddPersonnel, onDeletePersonnel, onUpdatePersonnel }) => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [selectedPersonnel, setSelectedPersonnel] = useState<Personnel | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+
+    const handleSave = async (personnelData: Omit<Personnel, 'id'>) => {
+        const result = await onAddPersonnel(personnelData);
+        if (result) {
+            setIsAddModalOpen(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (window.confirm("Êtes-vous sûr de vouloir supprimer ce membre du personnel ?")) {
+            await onDeletePersonnel(id);
+        }
+    };
+
 
     const getServiceStatusClass = (status: string) => {
         switch (status) {
@@ -168,11 +184,7 @@ const PersonnelsPage: FC<PersonnelsPageProps> = ({ personnels, onAddPersonnel, o
                                                         Voir Profil
                                                     </button>
                                                     <button 
-                                                        onClick={() => {
-                                                            if (window.confirm(`Êtes-vous sûr de vouloir supprimer ${person.fullName} ?`)) {
-                                                                onDeletePersonnel(person.id);
-                                                            }
-                                                        }}
+                                                        onClick={() => handleDelete(person.id)}
                                                         className="text-red-500 hover:text-red-700 font-bold text-2xs bg-rose-50 hover:bg-rose-100 px-2.5 py-1.5 rounded-lg transition"
                                                     >
                                                         Supprimer
@@ -191,7 +203,7 @@ const PersonnelsPage: FC<PersonnelsPageProps> = ({ personnels, onAddPersonnel, o
             <PersonnelModal 
                 isOpen={isAddModalOpen} 
                 onClose={() => setIsAddModalOpen(false)} 
-                onSave={onAddPersonnel} 
+                onSave={handleSave} 
             />
 
             {/* Personnel Profile Modal Details */}

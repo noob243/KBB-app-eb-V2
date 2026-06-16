@@ -1,27 +1,23 @@
-export const toSnakeCase = (obj: any): any => {
-  if (obj === null || obj === undefined || typeof obj !== 'object') return obj;
-  if (Array.isArray(obj)) return obj.map(toSnakeCase);
+import { camelCase, snakeCase } from 'lodash';
 
-  const result: any = {};
-  for (const [key, value] of Object.entries(obj)) {
-    const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-    result[snakeKey] = typeof value === 'object' && value !== null && !(value instanceof Date) && !(value instanceof File)
-      ? toSnakeCase(value)
-      : value;
+const convertObjectKeys = (obj: any, converter: (key: string) => string): any => {
+  if (Array.isArray(obj)) {
+    return obj.map(v => convertObjectKeys(v, converter));
   }
-  return result;
+  if (obj !== null && typeof obj === 'object') {
+    return Object.keys(obj).reduce((acc, key) => {
+      const newKey = converter(key);
+      acc[newKey] = convertObjectKeys(obj[key], converter);
+      return acc;
+    }, {} as { [key: string]: any });
+  }
+  return obj;
+};
+
+export const toSnakeCase = (obj: any): any => {
+  return convertObjectKeys(obj, snakeCase);
 };
 
 export const toCamelCase = (obj: any): any => {
-  if (obj === null || obj === undefined || typeof obj !== 'object') return obj;
-  if (Array.isArray(obj)) return obj.map(toCamelCase);
-
-  const result: any = {};
-  for (const [key, value] of Object.entries(obj)) {
-    const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-    result[camelKey] = typeof value === 'object' && value !== null && !(value instanceof Date)
-      ? toCamelCase(value)
-      : value;
-  }
-  return result;
+  return convertObjectKeys(obj, camelCase);
 };

@@ -1,21 +1,37 @@
 import React, { FC, useState } from 'react';
 import PageContainer from '../components/PageContainer';
 import EventModal from '../components/modals/EventModal';
-import { Event, EventReport } from '../types';
+import { Event } from '../types';
 
 interface EventsPageProps {
   events: Event[];
-  onAddEvent: (event: Omit<Event, 'id'>) => void;
-  onDeleteEvent?: (id: string) => void;
-  onUpdateEvent?: (event: Event) => void;
+  onAddEvent: (event: Omit<Event, 'id'>) => Promise<Event | null>;
+  onDeleteEvent: (id: string) => Promise<boolean>;
+  onUpdateEvent: (event: Event) => Promise<Event | null>;
 }
 
 const EventsPage: FC<EventsPageProps> = ({ events, onAddEvent, onDeleteEvent, onUpdateEvent }) => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
-    const handleSaveEvent = (event: Omit<Event, 'id'>) => {
-        onAddEvent(event);
+    const handleSave = async (eventData: Omit<Event, 'id'> | Event) => {
+        if ('id' in eventData && selectedEvent) {
+            const result = await onUpdateEvent(eventData as Event);
+            if (result) {
+                setSelectedEvent(null);
+            }
+        } else {
+            const result = await onAddEvent(eventData as Omit<Event, 'id'>);
+            if (result) {
+                setIsAddModalOpen(false);
+            }
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (window.confirm("Êtes-vous sûr de vouloir supprimer cet événement ?")) {
+            await onDeleteEvent(id);
+        }
     };
 
     return (
@@ -62,11 +78,9 @@ const EventsPage: FC<EventsPageProps> = ({ events, onAddEvent, onDeleteEvent, on
                                         <button onClick={() => setSelectedEvent(event)} className="text-indigo-600 font-bold text-sm bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-xl transition">
                                             Détails
                                         </button>
-                                        {onDeleteEvent && (
-                                            <button onClick={() => onDeleteEvent(event.id)} className="ml-2 text-red-500 font-bold text-sm bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-xl transition">
-                                                Suppr.
-                                            </button>
-                                        )}
+                                        <button onClick={() => handleDelete(event.id)} className="ml-2 text-red-500 font-bold text-sm bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-xl transition">
+                                            Suppr.
+                                        </button>
                                     </td>
                                 </tr>
                             ))}
@@ -78,10 +92,7 @@ const EventsPage: FC<EventsPageProps> = ({ events, onAddEvent, onDeleteEvent, on
             <EventModal 
                 isOpen={isAddModalOpen || selectedEvent !== null} 
                 onClose={() => { setIsAddModalOpen(false); setSelectedEvent(null); }} 
-                onSave={(e) => {
-                    if(onUpdateEvent && selectedEvent) onUpdateEvent(e as Event)
-                    else handleSaveEvent(e)
-                }} 
+                onSave={handleSave} 
                 eventData={selectedEvent}
             />
         </>

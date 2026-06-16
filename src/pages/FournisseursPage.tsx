@@ -5,14 +5,30 @@ import { Fournisseur } from '../types';
 
 interface FournisseursPageProps {
   fournisseurs: Fournisseur[];
-  onAddFournisseur: (fournisseur: Fournisseur) => void;
-  onDeleteFournisseur: (id: string) => void;
+  onAddFournisseur: (fournisseur: Omit<Fournisseur, 'id'>) => Promise<Fournisseur | null>;
+  onDeleteFournisseur: (id: string) => Promise<boolean>;
 }
 
 const FournisseursPage: FC<FournisseursPageProps> = ({ fournisseurs, onAddFournisseur, onDeleteFournisseur }) => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [selectedFournisseur, setSelectedFournisseur] = useState<Fournisseur | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+
+    const handleSave = async (fournisseurData: Omit<Fournisseur, 'id'>) => {
+        const result = await onAddFournisseur(fournisseurData);
+        if (result) {
+            setIsAddModalOpen(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (window.confirm("Êtes-vous sûr de vouloir supprimer ce fournisseur ?")) {
+            await onDeleteFournisseur(id);
+            if (selectedFournisseur?.id === id) {
+                setSelectedFournisseur(null);
+            }
+        }
+    };
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-US', {
@@ -139,14 +155,7 @@ const FournisseursPage: FC<FournisseursPageProps> = ({ fournisseurs, onAddFourni
                                                                 Voir
                                                             </button>
                                                             <button 
-                                                                onClick={() => {
-                                                                    if (confirm(`Êtes-vous sûr de vouloir supprimer le fournisseur ${f.nomComplet} ?`)) {
-                                                                        onDeleteFournisseur(f.id);
-                                                                        if (selectedFournisseur?.id === f.id) {
-                                                                            setSelectedFournisseur(null);
-                                                                        }
-                                                                    }
-                                                                }}
+                                                                onClick={() => handleDelete(f.id)}
                                                                 className="px-2 py-1 text-2xs text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition"
                                                                 title="Supprimer ce fournisseur"
                                                             >
@@ -298,7 +307,7 @@ const FournisseursPage: FC<FournisseursPageProps> = ({ fournisseurs, onAddFourni
             <FournisseurModal 
                 isOpen={isAddModalOpen} 
                 onClose={() => setIsAddModalOpen(false)} 
-                onSave={onAddFournisseur} 
+                onSave={handleSave} 
             />
         </>
     );

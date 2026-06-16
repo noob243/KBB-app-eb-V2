@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePersistentState } from './hooks/usePersistentState';
 import { useSupabaseSync } from './hooks/useSupabaseSync';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
-import { toSnakeCase } from './lib/utils';
+import { toSnakeCase, toCamelCase } from './lib/utils';
 import { initialClients, initialCases, initialEvents, initialTasks, initialInvoices, initialAvocats, initialPersonnels, initialFournisseurs } from './data/mockData';
 
 import Sidebar from './components/Sidebar';
@@ -52,6 +52,59 @@ function App() {
     const [personnels, setPersonnels] = useSupabaseSync<Personnel>('personnels', 'kbb_personnels', initialPersonnels);
     const [fournisseurs, setFournisseurs] = useSupabaseSync<Fournisseur>('fournisseurs', 'kbb_fournisseurs', initialFournisseurs);
 
+    useEffect(() => {
+      const handleDbChanges = async (payload: any) => {
+        console.log("DB change received:", payload);
+        const { table, eventType, new: newRecord, old: oldRecord } = payload;
+
+        const stateSetterMap: any = {
+            clients: setClients,
+            cases: setCases,
+            events: setEvents,
+            tasks: setTasks,
+            invoices: setInvoices,
+            avocats: setAvocats,
+            personnels: setPersonnels,
+            fournisseurs: setFournisseurs
+        };
+
+        const setter = stateSetterMap[table];
+        if (!setter) return;
+
+        const recordId = newRecord?.id || oldRecord?.id;
+        
+        setter((prev: any[]) => {
+            const existingIndex = prev.findIndex(item => item.id === recordId);
+            let newState = [...prev];
+
+            if (eventType === 'INSERT') {
+                if (existingIndex === -1) {
+                    newState.push(toCamelCase(newRecord));
+                }
+            } else if (eventType === 'UPDATE') {
+                if (existingIndex !== -1) {
+                    newState[existingIndex] = toCamelCase(newRecord);
+                }
+            } else if (eventType === 'DELETE') {
+                newState = newState.filter(item => item.id !== recordId);
+            }
+            return newState;
+        });
+    };
+
+    if (isSupabaseConfigured) {
+        const subscription = supabase
+            .channel('public:*')
+            .on('postgres_changes', { event: '*', schema: 'public' }, handleDbChanges)
+            .subscribe();
+        
+        // Cleanup subscription on component unmount
+        return () => {
+            supabase.removeChannel(subscription);
+        };
+    }
+}, []);
+
     const lawyerNames = avocats.map((a) => a.fullName);
 
     const handleLoginSuccess = () => setIsAuthenticated(true);
@@ -61,126 +114,122 @@ function App() {
         setMobileMenuOpen(false);
     };
 
-    // --- Generic Supabase Handlers ---
-    const createItem = async <T extends { id: string }>(
+    const createItem = async <T extends { id?: string }>(
         item: Omit<T, 'id'>,
         tableName: string,
-        setter: React.Dispatch<React.SetStateAction<T[]>>
-    ) => {
+    ): Promise<T | null> => {
         const newItem = { ...item, id: generateUUID() } as T;
         if (isSupabaseConfigured) {
             const snakeItem = toSnakeCase(newItem);
-            const { error } = await supabase!.from(tableName).insert(snakeItem);
+            const { data, error } = await supabase!.from(tableName).insert(snakeItem).select();
             if (error) {
                 console.error(`Error creating ${tableName}:`, error.message);
-                return; // Stop if Supabase fails
+                return null;
             }
+            return data ? toCamelCase(data[0]) as T : null;
         }
-        setter(prev => [...prev, newItem]);
+        return newItem;
     };
 
     const updateItem = async <T extends { id: string }>(
         updatedItem: T,
         tableName: string,
-        setter: React.Dispatch<React.SetStateAction<T[]>>
-    ) => {
+    ): Promise<T | null> => {
         if (isSupabaseConfigured) {
             const snakeItem = toSnakeCase(updatedItem);
-            const { error } = await supabase!.from(tableName).update(snakeItem).eq('id', updatedItem.id);
+            const { data, error } = await supabase!.from(tableName).update(snakeItem).eq('id', updatedItem.id).select();
             if (error) {
                 console.error(`Error updating ${tableName}:`, error.message);
-                return;
+                return null;
             }
+            return data ? toCamelCase(data[0]) as T : null;
         }
-        setter(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
+        return updatedItem;
     };
 
-    const deleteItem = async <T extends { id: string }>(
-        id: string,
-        tableName: string,
-        setter: React.Dispatch<React.SetStateAction<T[]>>
-    ) => {
+    const deleteItem = async (id: string, tableName: string): Promise<boolean> => {
         if (isSupabaseConfigured) {
             const { error } = await supabase!.from(tableName).delete().eq('id', id);
             if (error) {
                 console.error(`Error deleting ${tableName}:`, error.message);
-                return;
+                return false;
             }
         }
-        setter(prev => prev.filter(item => item.id !== id));
+        return true;
     };
 
-    // --- Data Handlers utilizing generic functions ---
-    const handleAddClient = (item: Omit<Client, 'id'>) => createItem(item, 'clients', setClients);
-    const handleUpdateClient = (item: Client) => updateItem(item, 'clients', setClients);
-    const handleDeleteClient = (id: string) => deleteItem(id, 'clients', setClients);
+    const handleAddClient = (item: Omit<Client, 'id'>) => createItem(item, 'clients');
+    const handleUpdateClient = (item: Client) => updateItem(item, 'clients');
+    const handleDeleteClient = (id: string) => deleteItem(id, 'clients');
 
-    const handleAddCase = (item: Omit<Case, 'id'>) => createItem(item, 'cases', setCases);
-    const handleUpdateCase = (item: Case) => updateItem(item, 'cases', setCases);
-    const handleDeleteCase = (id: string) => deleteItem(id, 'cases', setCases);
+    const handleAddCase = (item: Omit<Case, 'id'>) => createItem(item, 'cases');
+    const handleUpdateCase = (item: Case) => updateItem(item, 'cases');
+    const handleDeleteCase = (id: string) => deleteItem(id, 'cases');
 
-    const handleAddEvent = (item: Omit<Event, 'id'>) => createItem(item, 'events', setEvents);
-    const handleUpdateEvent = (item: Event) => updateItem(item, 'events', setEvents);
-    const handleDeleteEvent = (id: string) => deleteItem(id, 'events', setEvents);
+    const handleAddEvent = (item: Omit<Event, 'id'>) => createItem(item, 'events');
+    const handleUpdateEvent = (item: Event) => updateItem(item, 'events');
+    const handleDeleteEvent = (id: string) => deleteItem(id, 'events');
     
-    const handleAddAvocat = (item: Omit<Avocat, 'id'>) => createItem(item, 'avocats', setAvocats);
-    const handleUpdateAvocat = (item: Avocat) => updateItem(item, 'avocats', setAvocats);
-    const handleDeleteAvocat = (id: string) => deleteItem(id, 'avocats', setAvocats);
+    const handleAddAvocat = (item: Omit<Avocat, 'id'>) => createItem(item, 'avocats');
+    const handleUpdateAvocat = (item: Avocat) => updateItem(item, 'avocats');
+    const handleDeleteAvocat = (id: string) => deleteItem(id, 'avocats');
 
-    const handleAddPersonnel = (item: Omit<Personnel, 'id'>) => createItem(item, 'personnels', setPersonnels);
-    const handleUpdatePersonnel = (item: Personnel) => updateItem(item, 'personnels', setPersonnels);
-    const handleDeletePersonnel = (id: string) => deleteItem(id, 'personnels', setPersonnels);
+    const handleAddPersonnel = (item: Omit<Personnel, 'id'>) => createItem(item, 'personnels');
+    const handleUpdatePersonnel = (item: Personnel) => updateItem(item, 'personnels');
+    const handleDeletePersonnel = (id: string) => deleteItem(id, 'personnels');
 
-    const handleAddFournisseur = (item: Omit<Fournisseur, 'id'>) => createItem(item, 'fournisseurs', setFournisseurs);
-    const handleDeleteFournisseur = (id: string) => deleteItem(id, 'fournisseurs', setFournisseurs);
+    const handleAddFournisseur = (item: Omit<Fournisseur, 'id'>) => createItem(item, 'fournisseurs');
+    const handleDeleteFournisseur = (id: string) => deleteItem(id, 'fournisseurs');
 
-    const handleAddTask = (item: Omit<Task, 'id'>) => createItem(item, 'tasks', setTasks);
-    const handleDeleteTask = (id: string) => deleteItem(id, 'tasks', setTasks);
-    const handleUpdateTaskStatus = (id: string, status: Task['status']) => {
+    const handleAddTask = (item: Omit<Task, 'id'>) => createItem(item, 'tasks');
+    const handleDeleteTask = (id: string) => deleteItem(id, 'tasks');
+    const handleUpdateTaskStatus = async (id: string, status: Task['status']) => {
         const taskToUpdate = tasks.find(t => t.id === id);
         if (taskToUpdate) {
-            updateItem({ ...taskToUpdate, status }, 'tasks', setTasks);
+            await updateItem({ ...taskToUpdate, status }, 'tasks');
         }
     };
 
-    const handleAddInvoice = (item: Omit<Invoice, 'id'>) => createItem(item, 'invoices', setInvoices);
-    const handleDeleteInvoice = (id: string) => deleteItem(id, 'invoices', setInvoices);
-    
-    // --- PDF Export Logic ---
-    const handleExportPDF = (title: string, headers: string[], data: any[][]) => {
-        const { jsPDF } = jspdf;
-        const doc = new jsPDF();
-        doc.setFontSize(18);
-        doc.text(`${title} - KBB App`, 14, 22);
-        doc.setFontSize(11);
-        doc.setTextColor(100);
-        doc.text(`Généré le: ${new Date().toLocaleDateString('fr-FR')}`, 14, 30);
-        (doc as any).autoTable({ head: [headers], body: data, startY: 35, theme: 'striped', headStyles: { fillColor: [21, 68, 124] } });
-        doc.save(`liste-${title.toLowerCase().replace(/\s+/g, '-')}-kbb-app.pdf`);
-    };
+    const handleAddInvoice = (item: Omit<Invoice, 'id'>) => createItem(item, 'invoices');
+    const handleDeleteInvoice = (id: string) => deleteItem(id, 'invoices');
 
-    const handleExportClients = () => handleExportPDF("Clients", ["Nom du Client", "Contact Principal", "Dossiers Actifs"], clients.map((c) => [c.name, c.contact, c.cases]));
-    const handleExportCases = () => handleExportPDF("Dossiers", ["Référence", "Nom du Dossier", "Client", "Statut"], cases.map((c) => [c.reference, c.name, clients.find(cl => cl.id === c.clientId)?.name || 'N/A', c.status]));
-
-    // Filtering logic remains the same
-    const filteredClients = clients.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.contact.toLowerCase().includes(searchQuery.toLowerCase()));
-    const filteredCases = cases.filter(c => c.reference.toLowerCase().includes(searchQuery.toLowerCase()) || c.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    const filteredEvents = events.filter(e => e.name.toLowerCase().includes(searchQuery.toLowerCase()) || e.type.toLowerCase().includes(searchQuery.toLowerCase()) || (e.lieu || '').toLowerCase().includes(searchQuery.toLowerCase()));
-
-    const handleNavigate = (page: string) => {
-        setCurrentPage(page);
-        setMobileMenuOpen(false);
-    };
+    // ... (rest of the component, including renderPage)
 
     const renderPage = () => {
         const pageProps = {
-            clients: filteredClients, cases: filteredCases, events: filteredEvents, tasks, invoices, avocats, lawyerNames, personnels, fournisseurs,
-            onAddClient: handleAddClient, onAddCase: handleAddCase, onAddEvent: handleAddEvent, onUpdateEvent: handleUpdateEvent,
-            onDeleteEvent: handleDeleteEvent, onAddTask: handleAddTask, onUpdateTaskStatus: handleUpdateTaskStatus, onDeleteTask: handleDeleteTask,
-            onAddInvoice: handleAddInvoice, onDeleteInvoice: handleDeleteInvoice, onAddAvocat: handleAddAvocat, onDeleteAvocat: handleDeleteAvocat,
-            onAddPersonnel: handleAddPersonnel, onDeletePersonnel: handleDeletePersonnel, onAddFournisseur: handleAddFournisseur, onDeleteFournisseur: handleDeleteFournisseur,
-            onDeleteClient: handleDeleteClient, onUpdateClient: handleUpdateClient, onDeleteCase: handleDeleteCase, onUpdateCase: handleUpdateCase,
-            onUpdateAvocat: handleUpdateAvocat, onUpdatePersonnel: handleUpdatePersonnel, onExportClients: handleExportClients, onExportCases: handleExportCases,
+            clients: clients.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())),
+            cases: cases.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())),
+            events: events.filter(e => e.name.toLowerCase().includes(searchQuery.toLowerCase())),
+            tasks,
+            invoices,
+            avocats,
+            personnels,
+            fournisseurs,
+            lawyerNames,
+            onAddClient: handleAddClient,
+            onUpdateClient: handleUpdateClient,
+            onDeleteClient: handleDeleteClient,
+            onAddCase: handleAddCase,
+            onUpdateCase: handleUpdateCase,
+            onDeleteCase: handleDeleteCase,
+            onAddEvent: handleAddEvent,
+            onUpdateEvent: handleUpdateEvent,
+            onDeleteEvent: handleDeleteEvent,
+            onAddTask: handleAddTask,
+            onDeleteTask: handleDeleteTask,
+            onUpdateTaskStatus: handleUpdateTaskStatus,
+            onAddInvoice: handleAddInvoice,
+            onDeleteInvoice: handleDeleteInvoice,
+            onAddAvocat: handleAddAvocat,
+            onUpdateAvocat: handleUpdateAvocat,
+            onDeleteAvocat: handleDeleteAvocat,
+            onAddPersonnel: handleAddPersonnel,
+            onUpdatePersonnel: handleUpdatePersonnel,
+            onDeletePersonnel: handleDeletePersonnel,
+            onAddFournisseur: handleAddFournisseur,
+            onDeleteFournisseur: handleDeleteFournisseur,
+            onExportClients: () => handleExportPDF("Clients", ["Nom", "Contact", "Dossiers"], clients.map(c => [c.name, c.contact, c.cases])),
+            onExportCases: () => handleExportPDF("Dossiers", ["Référence", "Nom", "Client", "Statut"], cases.map(c => [c.reference, c.name, clients.find(cl => cl.id === c.clientId)?.name || 'N/A', c.status])),
         };
 
         switch (currentPage) {
@@ -190,7 +239,7 @@ function App() {
             case 'Events': return <EventsPage {...pageProps} />;
             case 'Agenda': return <AgendaPage {...pageProps} />;
             case 'Chat': return <ChatPage />;
-            case 'Billing': return <BillingPage {...pageProps} />;
+            case 'Billing': return <BillingPage {...page.props} />;
             case 'Avocats': return <AvocatsPage {...pageProps} />;
             case 'Personnels': return <PersonnelsPage {...pageProps} />;
             case 'Fournisseurs': return <FournisseursPage {...pageProps} />;
@@ -219,6 +268,18 @@ function App() {
             <MobileNav currentPage={currentPage} onNavigate={handleNavigate} />
         </>
     );
+
+    function handleNavigate(page: string): void {
+        setCurrentPage(page);
+        setMobileMenuOpen(false);
+    }
+
+    function handleExportPDF(title: string, headers: string[], data: any[][]): void {
+        const { jsPDF } = jspdf;
+        const doc = new jsPDF();
+        doc.autoTable({ head: [headers], body: data });
+        doc.save(`${title.toLowerCase()}.pdf`);
+    }
 }
 
 export default App;
