@@ -11,6 +11,24 @@ export const initialInvoices: Invoice[] = [];
 export const initialPersonnels: Personnel[] = [];
 export const initialFournisseurs: Fournisseur[] = [];
 
+// Mock data for Chat/Forum page
+export const mockPersonnel = [
+  { name: 'Jean-Luc Tshisekedi', role: 'Avocat Associé', status: 'online' },
+  { name: 'Marie-Claire Mobutu', role: 'Avocate Collaboratrice', status: 'online' },
+  { name: 'Félicité Kanku', role: 'Secrétaire Juridique', status: 'offline' },
+  { name: 'Patrick Lumumba', role: 'Avocat Stagiaire', status: 'online' },
+];
+
+export const initialConversations: Record<string, { sender: string; text: string; time: string }[]> = {
+  'Jean-Luc Tshisekedi': [
+    { sender: 'them', text: 'Peux-tu vérifier les dernières conclusions pour le dossier Congo-Invest ?', time: '10:30' },
+  ],
+  'Marie-Claire Mobutu': [
+    { sender: 'them', text: 'La réunion avec le client est confirmée pour 15h.', time: '11:00' },
+  ],
+};
+
+
 // Mock data for Avocats as an example, can be cleared if starting from a fresh DB
 export const initialAvocats: Avocat[] = [
   {
