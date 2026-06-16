@@ -103,8 +103,14 @@ export const useSupabaseSync = <T extends { id: string | number }>(
             }
           }
         }
+        // Marquer comme chargé même en cas d'erreur ou si Supabase/SQL est vide
+        // pour permettre les futurs upserts lors des ajouts utilisateur
+        isLoadedRef.current = true;
       } catch (err) {
         console.error(`⚠️ Réseau [${tableName}]:`, err);
+        // En cas d'erreur réseau, on marque quand même comme chargé
+        // pour ne pas bloquer les écritures utilisateur
+        isLoadedRef.current = true;
       }
     };
 
@@ -119,13 +125,17 @@ export const useSupabaseSync = <T extends { id: string | number }>(
 
     if (isSupabaseConfigured && tableName && isLoadedRef.current && state.length > 0) {
       const sync = async () => {
-        const snakeData = toSnakeCase(state);
-        const { error } = await supabase!
-          .from(tableName)
-          .upsert(snakeData, { onConflict: 'id' });
+        try {
+          const snakeData = toSnakeCase(state);
+          const { error } = await supabase!
+            .from(tableName)
+            .upsert(snakeData, { onConflict: 'id' });
 
-        if (error) {
-          console.error(`⚠️ Sync [${tableName}]:`, error.message);
+          if (error) {
+            console.error(`⚠️ Sync [${tableName}]:`, error.message);
+          }
+        } catch (err) {
+          console.error(`⚠️ Sync [${tableName}] error:`, err);
         }
       };
       sync();

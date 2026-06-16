@@ -24,6 +24,18 @@ import { Client, Case, Event, Task, Invoice, Avocat, Personnel, Fournisseur } fr
 
 declare const jspdf: any;
 
+// Fallback UUID generator for non-secure contexts (HTTP on VPS)
+const generateUUID = (): string => {
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
+        return window.crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+};
+
 function App() {
     const [isAuthenticated, setIsAuthenticated] = usePersistentState('kbb_auth', false);
     const [currentPage, setCurrentPage] = useState('Dashboard');
@@ -89,25 +101,25 @@ function App() {
 
     // --- Data Handlers ---
     const handleAddClient = (newClient: Omit<Client, 'id'>) => {
-        setClients(prev => [...prev, { ...newClient, id: crypto.randomUUID() }]);
+        setClients(prev => [...prev, { ...newClient, id: generateUUID() }]);
     };
     const handleAddCase = (newCase: Omit<Case, 'id'>) => {
-        setCases(prev => [...prev, { ...newCase, id: crypto.randomUUID() }]);
+        setCases(prev => [...prev, { ...newCase, id: generateUUID() }]);
     };
-    const handleAddEvent = (newEvent: Omit<Event, 'id'>) => setEvents(prev => [...prev, { ...newEvent, id: crypto.randomUUID() }]);
+    const handleAddEvent = (newEvent: Omit<Event, 'id'>) => setEvents(prev => [...prev, { ...newEvent, id: generateUUID() }]);
     const handleUpdateEvent = (updatedEvent: Event) => {
         setEvents(prev => prev.map(e => e.id === updatedEvent.id ? updatedEvent : e));
     };
     const handleAddTask = (newTask: Omit<Task, 'id'>) => {
-        setTasks(prev => [...prev, { ...newTask, id: crypto.randomUUID() }]);
+        setTasks(prev => [...prev, { ...newTask, id: generateUUID() }]);
     };
     const handleUpdateTaskStatus = (id: string, status: 'Effectué' | 'Non effectué' | 'Effectué à moitié') => {
         setTasks(prev => prev.map(t => t.id === id ? { ...t, status } : t));
     };
-    const handleAddInvoice = (newInvoice: Omit<Invoice, 'id'>) => setInvoices(prev => [...prev, { ...newInvoice, id: crypto.randomUUID() }]);
-    const handleAddAvocat = (newAvocat: Omit<Avocat, 'id'>) => setAvocats(prev => [...prev, { ...newAvocat, id: crypto.randomUUID() }]);
-    const handleAddPersonnel = (newPersonnel: Omit<Personnel, 'id'>) => setPersonnels(prev => [...prev, { ...newPersonnel, id: crypto.randomUUID() }]);
-    const handleAddFournisseur = (newFournisseur: Omit<Fournisseur, 'id'>) => setFournisseurs(prev => [...prev, { ...newFournisseur, id: crypto.randomUUID() }]);
+    const handleAddInvoice = (newInvoice: Omit<Invoice, 'id'>) => setInvoices(prev => [...prev, { ...newInvoice, id: generateUUID() }]);
+    const handleAddAvocat = (newAvocat: Omit<Avocat, 'id'>) => setAvocats(prev => [...prev, { ...newAvocat, id: generateUUID() }]);
+    const handleAddPersonnel = (newPersonnel: Omit<Personnel, 'id'>) => setPersonnels(prev => [...prev, { ...newPersonnel, id: generateUUID() }]);
+    const handleAddFournisseur = (newFournisseur: Omit<Fournisseur, 'id'>) => setFournisseurs(prev => [...prev, { ...newFournisseur, id: generateUUID() }]);
 
     const handleDeleteClient = (id: string) => setClients(clients.filter(c => c.id !== id));
     const handleDeleteCase = (id: string) => setCases(cases.filter(c => c.id !== id));
@@ -137,7 +149,7 @@ function App() {
     const filteredEvents = events.filter(e => 
         e.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
         e.type.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        e.lieu.toLowerCase().includes(searchQuery.toLowerCase())
+        (e.lieu || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const handleNavigate = (page: string) => {

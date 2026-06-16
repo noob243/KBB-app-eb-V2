@@ -113,7 +113,7 @@ const CasesPage: FC<CasesPageProps> = ({ cases, clients, tasks = [], onAddCase, 
             <CaseModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSave={onAddCase} clients={clients} avocats={avocats} cases={cases} />
 
             {selectedCase && (() => {
-                const caseTasks = tasks.filter(t => t.caseId.toLowerCase() === selectedCase.id.toLowerCase());
+                const caseTasks = tasks.filter(t => t.caseId && t.caseId.toLowerCase() === selectedCase.id.toLowerCase());
                 
                 return (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-3 sm:p-4">

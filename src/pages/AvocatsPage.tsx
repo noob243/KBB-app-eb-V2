@@ -128,7 +128,7 @@ const AvocatsPage: FC<AvocatsPageProps> = ({ avocats, tasks = [], onAddAvocat, o
 
             {/* Avocat details modal */}
             {selectedAvocat && (() => {
-                const lawyerTasks = tasks.filter(t => t.lawyer && t.lawyer.toLowerCase() === selectedAvocat.fullName.toLowerCase());
+                const lawyerTasks = tasks.filter(t => t.lawyer && t.lawyer.toLowerCase() === (selectedAvocat.fullName || '').toLowerCase());
                 
                 return (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-3 sm:p-4">

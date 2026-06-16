@@ -47,7 +47,7 @@ const ClientsPage: FC<ClientsPageProps> = ({ clients, cases = [], onAddClient, o
                                     <p className="text-xs text-gray-500 mt-0.5 truncate">{client.contact}</p>
                                 </div>
                                 <span className="inline-flex font-semibold text-xs px-2 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg flex-shrink-0">
-                                    {client.cases} dossier{client.cases > 1 ? 's' : ''}
+                                    {(client.cases ?? 0)} dossier{((client.cases ?? 0) > 1) ? 's' : ''}
                                 </span>
                             </div>
                             <div className="mt-3 flex gap-2">
@@ -93,7 +93,7 @@ const ClientsPage: FC<ClientsPageProps> = ({ clients, cases = [], onAddClient, o
                                     <td className="p-4 text-gray-600">{client.contact}</td>
                                     <td className="p-4 text-gray-600">
                                         <span className="inline-flex font-semibold text-xs px-2.5 py-1 bg-indigo-50 text-indigo-750 border border-indigo-100 rounded-lg">
-                                            {client.cases} dossier{client.cases > 1 ? 's' : ''}
+                                            {(client.cases ?? 0)} dossier{((client.cases ?? 0) > 1) ? 's' : ''}
                                         </span>
                                     </td>
                                     <td className="p-4">
@@ -123,7 +123,7 @@ const ClientsPage: FC<ClientsPageProps> = ({ clients, cases = [], onAddClient, o
 
             {selectedClient && (() => {
                 const details = getClientDetails(selectedClient);
-                const clientCases = cases.filter(c => c.client && c.client.toLowerCase() === selectedClient.name.toLowerCase());
+                const clientCases = cases.filter(c => c.client && c.client.toLowerCase() === (selectedClient.name || '').toLowerCase());
                 
                 return (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-center items-center p-3 sm:p-4">
