@@ -33,6 +33,7 @@ const CaseModal: FC<CaseModalProps> = ({ isOpen, onClose, onSave, clients }) => 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onSave(formData);
+        onClose(); // <-- This is the fix
     };
 
     return (

@@ -40,6 +40,7 @@ const AvocatModal: FC<AvocatModalProps> = ({ isOpen, onClose, onSave }) => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onSave(formData);
+        onClose(); // <-- This is the fix
     };
 
     return (
