@@ -4,6 +4,8 @@ import { useSupabaseSync } from './hooks/useSupabaseSync';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { toSnakeCase, toCamelCase } from './lib/utils';
 import { initialClients, initialCases, initialEvents, initialTasks, initialInvoices, initialAvocats, initialPersonnels, initialFournisseurs } from './data/mockData';
+import toast from 'react-hot-toast';
+import NotificationProvider from './components/NotificationProvider';
 
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -118,44 +120,74 @@ function App() {
         item: Omit<T, 'id'>,
         tableName: string,
     ): Promise<T | null> => {
-        const newItem = { ...item, id: generateUUID() } as T;
-        if (isSupabaseConfigured) {
-            const snakeItem = toSnakeCase(newItem);
-            const { data, error } = await supabase!.from(tableName).insert(snakeItem).select();
-            if (error) {
-                console.error(`Error creating ${tableName}:`, error.message);
-                return null;
+        const promise = (async () => {
+            const newItem = { ...item, id: generateUUID() } as T;
+            if (isSupabaseConfigured) {
+                const snakeItem = toSnakeCase(newItem);
+                const { data, error } = await supabase!.from(tableName).insert(snakeItem).select();
+                if (error) {
+                    console.error(`Error creating ${tableName}:`, error.message);
+                    throw error;
+                }
+                return data ? toCamelCase(data[0]) as T : null;
             }
-            return data ? toCamelCase(data[0]) as T : null;
-        }
-        return newItem;
+            return newItem;
+        })();
+        
+        toast.promise(promise, {
+            loading: 'Enregistrement...',
+            success: 'Enregistré avec succès !',
+            error: 'Échec de l\'enregistrement.',
+        });
+        
+        return promise.catch(() => null);
     };
 
     const updateItem = async <T extends { id: string }>(
         updatedItem: T,
         tableName: string,
     ): Promise<T | null> => {
-        if (isSupabaseConfigured) {
-            const snakeItem = toSnakeCase(updatedItem);
-            const { data, error } = await supabase!.from(tableName).update(snakeItem).eq('id', updatedItem.id).select();
-            if (error) {
-                console.error(`Error updating ${tableName}:`, error.message);
-                return null;
+        const promise = (async () => {
+            if (isSupabaseConfigured) {
+                const snakeItem = toSnakeCase(updatedItem);
+                const { data, error } = await supabase!.from(tableName).update(snakeItem).eq('id', updatedItem.id).select();
+                if (error) {
+                    console.error(`Error updating ${tableName}:`, error.message);
+                    throw error;
+                }
+                return data ? toCamelCase(data[0]) as T : null;
             }
-            return data ? toCamelCase(data[0]) as T : null;
-        }
-        return updatedItem;
+            return updatedItem;
+        })();
+
+        toast.promise(promise, {
+            loading: 'Mise à jour...',
+            success: 'Mis à jour avec succès !',
+            error: 'Échec de la mise à jour.',
+        });
+
+        return promise.catch(() => null);
     };
 
     const deleteItem = async (id: string, tableName: string): Promise<boolean> => {
-        if (isSupabaseConfigured) {
-            const { error } = await supabase!.from(tableName).delete().eq('id', id);
-            if (error) {
-                console.error(`Error deleting ${tableName}:`, error.message);
-                return false;
+        const promise = (async () => {
+            if (isSupabaseConfigured) {
+                const { error } = await supabase!.from(tableName).delete().eq('id', id);
+                if (error) {
+                    console.error(`Error deleting ${tableName}:`, error.message);
+                    throw error;
+                }
             }
-        }
-        return true;
+            return true;
+        })();
+
+        toast.promise(promise, {
+            loading: 'Suppression...',
+            success: 'Supprimé avec succès !',
+            error: 'Échec de la suppression.',
+        });
+        
+        return promise.catch(() => false);
     };
 
     const handleAddClient = (item: Omit<Client, 'id'>) => createItem(item, 'clients');
@@ -255,7 +287,7 @@ function App() {
     }
 
     return (
-        <>
+        <NotificationProvider>
             <div className="hidden md:block fixed top-0 left-0 bottom-0 z-40">
                 <Sidebar currentPage={currentPage} setCurrentPage={handleNavigate} onLogout={handleLogout} />
             </div>
@@ -266,7 +298,7 @@ function App() {
                 </div>
             </div>
             <MobileNav currentPage={currentPage} onNavigate={handleNavigate} />
-        </>
+        </NotificationProvider>
     );
 
     function handleNavigate(page: string): void {
