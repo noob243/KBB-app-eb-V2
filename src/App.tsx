@@ -3,7 +3,7 @@ import { usePersistentState } from './hooks/usePersistentState';
 import { useSupabaseSync } from './hooks/useSupabaseSync';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { toSnakeCase, toCamelCase } from './lib/utils';
-import { initialClients, initialCases, initialEvents, initialTasks, initialInvoices, initialAvocats, initialPersonnels, initialFournisseurs } from './data/mockData';
+import { initialClients, initialCases, initialEvents, initialTasks, initialInvoices, initialAvocats, initialPersonnels, initialFournisseurs, initialProcedures } from './data/mockData';
 import toast from 'react-hot-toast';
 import NotificationProvider from './components/NotificationProvider';
 
@@ -24,7 +24,7 @@ import FournisseursPage from './pages/FournisseursPage';
 import GestionPage from './pages/GestionPage';
 import AllInterfacesPage from './pages/AllInterfacesPage';
 import AIAssistantPage from './pages/AIAssistantPage';
-import { Client, Case, Event, Task, Invoice, Avocat, Personnel, Fournisseur } from './types';
+import { Client, Case, Event, Task, Invoice, Avocat, Personnel, Fournisseur, Procedure } from './types';
 
 declare const jspdf: any;
 
@@ -53,150 +53,75 @@ function App() {
     const [avocats, setAvocats] = useSupabaseSync<Avocat>('avocats', 'kbb_avocats', initialAvocats);
     const [personnels, setPersonnels] = useSupabaseSync<Personnel>('personnels', 'kbb_personnels', initialPersonnels);
     const [fournisseurs, setFournisseurs] = useSupabaseSync<Fournisseur>('fournisseurs', 'kbb_fournisseurs', initialFournisseurs);
+    const [procedures, setProcedures] = useSupabaseSync<Procedure>('procedures', 'kbb_procedures', initialProcedures);
 
-    useEffect(() => {
-      const handleDbChanges = async (payload: any) => {
-        console.log("DB change received:", payload);
-        const { table, eventType, new: newRecord, old: oldRecord } = payload;
-
-        const stateSetterMap: any = {
-            clients: setClients,
-            cases: setCases,
-            events: setEvents,
-            tasks: setTasks,
-            invoices: setInvoices,
-            avocats: setAvocats,
-            personnels: setPersonnels,
-            fournisseurs: setFournisseurs
-        };
-
-        const setter = stateSetterMap[table];
-        if (!setter) return;
-
-        const recordId = newRecord?.id || oldRecord?.id;
-        
-        setter((prev: any[]) => {
-            const existingIndex = prev.findIndex(item => item.id === recordId);
-            let newState = [...prev];
-
-            if (eventType === 'INSERT') {
-                if (existingIndex === -1) {
-                    newState.push(toCamelCase(newRecord));
-                }
-            } else if (eventType === 'UPDATE') {
-                if (existingIndex !== -1) {
-                    newState[existingIndex] = toCamelCase(newRecord);
-                }
-            } else if (eventType === 'DELETE') {
-                newState = newState.filter(item => item.id !== recordId);
-            }
-            return newState;
-        });
+    // Generic CRUD operations with notifications
+    const createItem = async <T extends { id?: string }>(item: Omit<T, 'id'>, tableName: string): Promise<T | null> => {
+        const promise = createItemLogic(item, tableName);
+        toast.promise(promise, { loading: 'Enregistrement...', success: 'Enregistré!', error: 'Échec.' });
+        return promise;
     };
-
-    if (isSupabaseConfigured) {
-        const subscription = supabase
-            .channel('public:*')
-            .on('postgres_changes', { event: '*', schema: 'public' }, handleDbChanges)
-            .subscribe();
-        
-        // Cleanup subscription on component unmount
-        return () => {
-            supabase.removeChannel(subscription);
-        };
-    }
-}, []);
-
-    const lawyerNames = avocats.map((a) => a.fullName);
-
-    const handleLoginSuccess = () => setIsAuthenticated(true);
-    const handleLogout = () => {
-        setIsAuthenticated(false);
-        setCurrentPage('Dashboard');
-        setMobileMenuOpen(false);
+    const updateItem = async <T extends { id: string }>(item: T, tableName: string): Promise<T | null> => {
+        const promise = updateItemLogic(item, tableName);
+        toast.promise(promise, { loading: 'Mise à jour...', success: 'Mis à jour!', error: 'Échec.' });
+        return promise;
     };
-
-    const createItem = async <T extends { id?: string }>(
-        item: Omit<T, 'id'>,
-        tableName: string,
-    ): Promise<T | null> => {
-        const promise = (async () => {
-            const newItem = { ...item, id: generateUUID() } as T;
-            if (isSupabaseConfigured) {
-                const snakeItem = toSnakeCase(newItem);
-                const { data, error } = await supabase!.from(tableName).insert(snakeItem).select();
-                if (error) {
-                    console.error(`Error creating ${tableName}:`, error.message);
-                    throw error;
-                }
-                return data ? toCamelCase(data[0]) as T : null;
-            }
-            return newItem;
-        })();
-        
-        toast.promise(promise, {
-            loading: 'Enregistrement...',
-            success: 'Enregistré avec succès !',
-            error: 'Échec de l\'enregistrement.',
-        });
-        
-        return promise.catch(() => null);
-    };
-
-    const updateItem = async <T extends { id: string }>(
-        updatedItem: T,
-        tableName: string,
-    ): Promise<T | null> => {
-        const promise = (async () => {
-            if (isSupabaseConfigured) {
-                const snakeItem = toSnakeCase(updatedItem);
-                const { data, error } = await supabase!.from(tableName).update(snakeItem).eq('id', updatedItem.id).select();
-                if (error) {
-                    console.error(`Error updating ${tableName}:`, error.message);
-                    throw error;
-                }
-                return data ? toCamelCase(data[0]) as T : null;
-            }
-            return updatedItem;
-        })();
-
-        toast.promise(promise, {
-            loading: 'Mise à jour...',
-            success: 'Mis à jour avec succès !',
-            error: 'Échec de la mise à jour.',
-        });
-
-        return promise.catch(() => null);
-    };
-
     const deleteItem = async (id: string, tableName: string): Promise<boolean> => {
-        const promise = (async () => {
-            if (isSupabaseConfigured) {
-                const { error } = await supabase!.from(tableName).delete().eq('id', id);
-                if (error) {
-                    console.error(`Error deleting ${tableName}:`, error.message);
-                    throw error;
-                }
-            }
-            return true;
-        })();
-
-        toast.promise(promise, {
-            loading: 'Suppression...',
-            success: 'Supprimé avec succès !',
-            error: 'Échec de la suppression.',
-        });
-        
-        return promise.catch(() => false);
+        const promise = deleteItemLogic(id, tableName);
+        toast.promise(promise, { loading: 'Suppression...', success: 'Supprimé!', error: 'Échec.' });
+        return promise;
     };
 
+    // Raw CRUD logic
+    const createItemLogic = async <T extends { id?: string }>(item: Omit<T, 'id'>, tableName: string): Promise<T | null> => {
+        const newItem = { ...item, id: generateUUID() } as T;
+        if (isSupabaseConfigured) {
+            const { data, error } = await supabase.from(tableName).insert(toSnakeCase(newItem)).select();
+            if (error) { console.error(error); return null; }
+            return data ? toCamelCase(data[0]) as T : null;
+        }
+        return newItem;
+    };
+    const updateItemLogic = async <T extends { id: string }>(item: T, tableName: string): Promise<T | null> => {
+        if (isSupabaseConfigured) {
+            const { data, error } = await supabase.from(tableName).update(toSnakeCase(item)).eq('id', item.id).select();
+            if (error) { console.error(error); return null; }
+            return data ? toCamelCase(data[0]) as T : null;
+        }
+        return item;
+    };
+    const deleteItemLogic = async (id: string, tableName: string): Promise<boolean> => {
+        if (isSupabaseConfigured) {
+            const { error } = await supabase.from(tableName).delete().eq('id', id);
+            if (error) { console.error(error); return false; }
+        }
+        return true;
+    };
+
+    // Specific handlers for each data type
     const handleAddClient = (item: Omit<Client, 'id'>) => createItem(item, 'clients');
     const handleUpdateClient = (item: Client) => updateItem(item, 'clients');
     const handleDeleteClient = (id: string) => deleteItem(id, 'clients');
 
-    const handleAddCase = (item: Omit<Case, 'id'>) => createItem(item, 'cases');
-    const handleUpdateCase = (item: Case) => updateItem(item, 'cases');
-    const handleDeleteCase = (id: string) => deleteItem(id, 'cases');
+    const handleAddCase = async (caseData: Omit<Case, 'id'>, proceduresData: Omit<Procedure, 'id'>[]) => {
+        const newCase = await createItemLogic(caseData, 'cases');
+        if (newCase && proceduresData.length > 0) {
+            const proceduresToInsert = proceduresData.map(p => ({ ...p, caseId: newCase.id, id: generateUUID() }));
+            await supabase.from('procedures').insert(toSnakeCase(proceduresToInsert));
+        }
+    };
+    const handleUpdateCase = async (caseData: Case, proceduresData: Omit<Procedure, 'id'>[]) => {
+        await updateItemLogic(caseData, 'cases');
+        await supabase.from('procedures').delete().eq('case_id', caseData.id);
+        if (proceduresData.length > 0) {
+            const proceduresToInsert = proceduresData.map(p => ({ ...p, caseId: caseData.id, id: generateUUID() }));
+            await supabase.from('procedures').insert(toSnakeCase(proceduresToInsert));
+        }
+    };
+    const handleDeleteCase = async (id: string) => {
+        await supabase.from('procedures').delete().eq('case_id', id);
+        return deleteItem(id, 'cases');
+    };
 
     const handleAddEvent = (item: Omit<Event, 'id'>) => createItem(item, 'events');
     const handleUpdateEvent = (item: Event) => updateItem(item, 'events');
@@ -211,33 +136,22 @@ function App() {
     const handleDeletePersonnel = (id: string) => deleteItem(id, 'personnels');
 
     const handleAddFournisseur = (item: Omit<Fournisseur, 'id'>) => createItem(item, 'fournisseurs');
+    const handleUpdateFournisseur = (item: Fournisseur) => updateItem(item, 'fournisseurs');
     const handleDeleteFournisseur = (id: string) => deleteItem(id, 'fournisseurs');
 
-    const handleAddTask = (item: Omit<Task, 'id'>) => createItem(item, 'tasks');
-    const handleDeleteTask = (id: string) => deleteItem(id, 'tasks');
-    const handleUpdateTaskStatus = async (id: string, status: Task['status']) => {
-        const taskToUpdate = tasks.find(t => t.id === id);
-        if (taskToUpdate) {
-            await updateItem({ ...taskToUpdate, status }, 'tasks');
-        }
-    };
-
-    const handleAddInvoice = (item: Omit<Invoice, 'id'>) => createItem(item, 'invoices');
-    const handleDeleteInvoice = (id: string) => deleteItem(id, 'invoices');
-
-    // ... (rest of the component, including renderPage)
+    const casesWithProcedures = cases.map(c => ({...c, procedures: procedures.filter(p => p.caseId === c.id)}));
 
     const renderPage = () => {
         const pageProps = {
-            clients: clients.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())),
-            cases: cases.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())),
-            events: events.filter(e => e.name.toLowerCase().includes(searchQuery.toLowerCase())),
+            clients,
+            cases: casesWithProcedures,
+            events,
             tasks,
             invoices,
             avocats,
             personnels,
             fournisseurs,
-            lawyerNames,
+            lawyerNames: avocats.map((a) => a.fullName),
             onAddClient: handleAddClient,
             onUpdateClient: handleUpdateClient,
             onDeleteClient: handleDeleteClient,
@@ -247,11 +161,6 @@ function App() {
             onAddEvent: handleAddEvent,
             onUpdateEvent: handleUpdateEvent,
             onDeleteEvent: handleDeleteEvent,
-            onAddTask: handleAddTask,
-            onDeleteTask: handleDeleteTask,
-            onUpdateTaskStatus: handleUpdateTaskStatus,
-            onAddInvoice: handleAddInvoice,
-            onDeleteInvoice: handleDeleteInvoice,
             onAddAvocat: handleAddAvocat,
             onUpdateAvocat: handleUpdateAvocat,
             onDeleteAvocat: handleDeleteAvocat,
@@ -259,19 +168,18 @@ function App() {
             onUpdatePersonnel: handleUpdatePersonnel,
             onDeletePersonnel: handleDeletePersonnel,
             onAddFournisseur: handleAddFournisseur,
+            onUpdateFournisseur: handleUpdateFournisseur,
             onDeleteFournisseur: handleDeleteFournisseur,
-            onExportClients: () => handleExportPDF("Clients", ["Nom", "Contact", "Dossiers"], clients.map(c => [c.name, c.contact, c.cases])),
-            onExportCases: () => handleExportPDF("Dossiers", ["Référence", "Nom", "Client", "Statut"], cases.map(c => [c.reference, c.name, clients.find(cl => cl.id === c.clientId)?.name || 'N/A', c.status])),
         };
 
         switch (currentPage) {
             case 'Dashboard': return <DashboardPage {...pageProps} />;
             case 'Clients': return <ClientsPage {...pageProps} />;
-            case 'Cases': return <CasesPage {...pageProps} onExport={pageProps.onExportCases} />;
+            case 'Cases': return <CasesPage {...pageProps} />;
             case 'Events': return <EventsPage {...pageProps} />;
             case 'Agenda': return <AgendaPage {...pageProps} />;
             case 'Chat': return <ChatPage />;
-            case 'Billing': return <BillingPage {...page.props} />;
+            case 'Billing': return <BillingPage {...pageProps} />;
             case 'Avocats': return <AvocatsPage {...pageProps} />;
             case 'Personnels': return <PersonnelsPage {...pageProps} />;
             case 'Fournisseurs': return <FournisseursPage {...pageProps} />;
@@ -283,35 +191,22 @@ function App() {
     };
 
     if (!isAuthenticated) {
-        return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+        return <LoginPage onLoginSuccess={() => setIsAuthenticated(true)} />;
     }
 
     return (
         <NotificationProvider>
-            <div className="hidden md:block fixed top-0 left-0 bottom-0 z-40">
-                <Sidebar currentPage={currentPage} setCurrentPage={handleNavigate} onLogout={handleLogout} />
-            </div>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }} className="md:ml-64">
-                <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} clients={clients} cases={cases} events={events} setCurrentPage={handleNavigate} />
-                <div style={{ flex: 1, overflow: 'auto', padding: '12px', paddingBottom: '80px', WebkitOverflowScrolling: 'touch' }}>
-                    {renderPage()}
+            <div className="flex h-screen bg-gray-100">
+                <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={() => setIsAuthenticated(false)} />
+                <div className="flex-1 flex flex-col overflow-hidden">
+                    <Header searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-4">
+                        {renderPage()}
+                    </main>
                 </div>
             </div>
-            <MobileNav currentPage={currentPage} onNavigate={handleNavigate} />
         </NotificationProvider>
     );
-
-    function handleNavigate(page: string): void {
-        setCurrentPage(page);
-        setMobileMenuOpen(false);
-    }
-
-    function handleExportPDF(title: string, headers: string[], data: any[][]): void {
-        const { jsPDF } = jspdf;
-        const doc = new jsPDF();
-        doc.autoTable({ head: [headers], body: data });
-        doc.save(`${title.toLowerCase()}.pdf`);
-    }
 }
 
 export default App;

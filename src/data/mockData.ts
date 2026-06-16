@@ -1,15 +1,22 @@
-import { Client, Case, Event, Avocat, Task, Invoice, Personnel, Fournisseur } from '../types';
+import { Client, Case, Event, Avocat, Task, Invoice, Personnel, Fournisseur, Procedure } from '../types';
 
 // Données mockées vidées — l'application utilise Supabase comme source de vérité
 // Les données initiales vides permettent de démarrer avec une base propre
 export const initialClients: Client[] = [];
 export const initialCases: Case[] = [];
 export const initialEvents: Event[] = [];
+export const initialProcedures: Procedure[] = [];
+export const initialTasks: Task[] = [];
+export const initialInvoices: Invoice[] = [];
+export const initialPersonnels: Personnel[] = [];
+export const initialFournisseurs: Fournisseur[] = [];
+
+// Mock data for Avocats as an example, can be cleared if starting from a fresh DB
 export const initialAvocats: Avocat[] = [
   {
     id: "1",
     fullName: "Dupont Jean",
-    photo: null,
+    photo: undefined,
     firstOathDate: "2010-05-20",
     secondOathDate: "2012-05-20",
     onaNumber: "12345",
@@ -31,7 +38,7 @@ export const initialAvocats: Avocat[] = [
   {
     id: "2",
     fullName: "Marie Claire",
-    photo: null,
+    photo: undefined,
     firstOathDate: "2015-09-15",
     secondOathDate: "2017-09-15",
     onaNumber: "67890",
@@ -48,10 +55,3 @@ export const initialAvocats: Avocat[] = [
     hasChildren: "Non",
   },
 ];
-export const initialTasks: Task[] = [];
-export const initialInvoices: Invoice[] = [];
-export const initialPersonnels: Personnel[] = [];
-export const initialFournisseurs: Fournisseur[] = [];
-
-export const mockPersonnel = [];
-export const initialConversations = {};
